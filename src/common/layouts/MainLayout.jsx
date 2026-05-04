@@ -7,7 +7,10 @@ import {
   CalendarCheck,
   LogOut,
   Menu,
-  X
+  X,
+  ListChecks,
+  Calendar as CalendarIcon,
+  User
 } from 'lucide-react'
 import { useAuth } from '../../features/auth/contexts/auth-context'
 
@@ -16,7 +19,10 @@ export default function MainLayout({ children }) {
   const { logout } = useAuth()
   const location = useLocation()
 
-  const navigation = [
+  const isSuperAdminSection = location.pathname.startsWith('/admin-dashboard')
+  const isOrgAdminSection = location.pathname.startsWith('/org-dashboard')
+
+  const superAdminNavigation = [
     { 
       name: 'Organizations', 
       href: '/admin-dashboard/organizations', 
@@ -31,10 +37,28 @@ export default function MainLayout({ children }) {
       name: 'Event Types', 
       href: '/admin-dashboard/event-types', 
       icon: CalendarCheck
+    },
+    { 
+      name: 'Step Templates', 
+      href: '/admin-dashboard/step-templates', 
+      icon: ListChecks
     }
   ]
 
-  const filteredNavigation = navigation
+  const orgAdminNavigation = [
+    { 
+      name: 'Users', 
+      href: '/org-dashboard/users', 
+      icon: User
+    },
+    { 
+      name: 'Camps', 
+      href: '/org-dashboard/camps', 
+      icon: CalendarIcon
+    }
+  ]
+
+  const navigation = isOrgAdminSection ? orgAdminNavigation : superAdminNavigation
 
   return (
     <div className="min-h-screen bg-gray-50 font-inter">
@@ -58,12 +82,12 @@ export default function MainLayout({ children }) {
             </div>
             <div>
               <h2 className="font-poppins font-bold text-gray-900">Camp Manager</h2>
-              <p className="text-xs text-gray-500">Admin Panel</p>
+              <p className="text-xs text-gray-500">{isOrgAdminSection ? 'Organization Panel' : 'Admin Panel'}</p>
             </div>
           </div>
 
           <nav className="flex-1 p-4 space-y-2">
-            {filteredNavigation.map((item) => {
+            {navigation.map((item) => {
               const Icon = item.icon
               const isActive = location.pathname === item.href
               
