@@ -28,7 +28,7 @@ export default function Login() {
 				super_admin: '/admin-dashboard',
 				org_admin: '/org-dashboard',
 				organizer: '/camp-dashboard',
-				staff: '/step-queue',
+				staff: '/staff-workstation/1/queue',
 			}
 
 			const redirectPath = roleRoutes[user.role] || '/dashboard'

@@ -19,6 +19,9 @@ import CampDashboard from '../features/organizer/pages/CampDashboard'
 import ParticipantList from '../features/organizer/pages/ParticipantList'
 import ParticipantDetail from '../features/organizer/pages/ParticipantDetail'
 import CampReport from '../features/organizer/pages/CampReport'
+import MediaGallery from '../features/organizer/pages/MediaGallery'
+import MyQueue from '../features/staff/pages/MyQueue'
+import StepForm from '../features/staff/pages/StepForm'
 
 export default function AppRoutes() {
 	return (
@@ -130,6 +133,32 @@ export default function AppRoutes() {
             <CampReport />
           </MainLayout>
         } />
+
+        <Route path="/camp-dashboard/:id/media" element={
+          <MainLayout>
+            <MediaGallery />
+          </MainLayout>
+        } />
+
+        {/* Staff Workstation Routes */}
+        <Route path="/staff-workstation/:campId" element={
+          <MainLayout>
+            <Navigate to="queue" replace />
+          </MainLayout>
+        } />
+
+        <Route path="/staff-workstation/:campId/queue" element={
+          <MainLayout>
+            <MyQueue />
+          </MainLayout>
+        } />
+
+        <Route path="/staff-workstation/:campId/step-form/:participantId" element={
+          <MainLayout>
+            <StepForm />
+          </MainLayout>
+        } />
+
 			</Routes>
 		</Router>
 	)

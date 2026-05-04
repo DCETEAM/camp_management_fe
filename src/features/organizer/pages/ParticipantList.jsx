@@ -58,44 +58,42 @@ export default function ParticipantList() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <button
           onClick={() => navigate(`/camp-dashboard/${id}`)}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
+          <ArrowLeft className="w-4 h-4 text-gray-500" />
         </button>
         <div>
-          <h1 className="font-poppins text-2xl lg:text-3xl font-bold text-gray-900">
-            Participants
-          </h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="font-poppins text-lg font-bold text-gray-900">Participants</h1>
+          <p className="text-xs text-gray-500">
             {filteredParticipants.length} participant{filteredParticipants.length !== 1 ? 's' : ''} registered
           </p>
         </div>
       </div>
 
       {/* Search & Filters */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <form onSubmit={handleSearch} className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name or token number..."
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+              className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
             />
           </form>
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-500" />
+          <div className="flex items-center gap-1.5">
+            <Filter className="w-3.5 h-3.5 text-gray-400" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+              className="px-3 py-2 text-xs border border-gray-200 rounded-lg bg-white text-gray-600 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
             >
               <option value="">All Status</option>
               <option value="not_started">Not Started</option>
@@ -108,54 +106,54 @@ export default function ParticipantList() {
 
       {/* Table */}
       {filteredParticipants.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
-          <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">No participants found</h3>
-          <p className="text-gray-500 text-sm">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+          <Users className="w-8 h-8 text-gray-300 mx-auto mb-3" />
+          <h3 className="text-sm font-semibold text-gray-900 mb-1">No participants found</h3>
+          <p className="text-gray-400 text-xs">
             {search || statusFilter
               ? 'Try adjusting your search or filter.'
               : 'No participants have been registered yet.'}
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Token</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Age</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Gender</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Current Step</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Registered</th>
+                  <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Token</th>
+                  <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+                  <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Age</th>
+                  <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Gender</th>
+                  <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Phone</th>
+                  <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Current Step</th>
+                  <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Registered</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-50">
                 {filteredParticipants.map((p, index) => (
                   <tr
                     key={p.id || index}
                     onClick={() => navigate(`/camp-dashboard/${id}/participants/${p.id}`)}
                     className="hover:bg-gray-50 cursor-pointer transition-colors"
                   >
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-primary-50 text-primary-700 font-bold text-sm">
+                    <td className="px-4 py-2.5">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary-50 text-primary-700 font-bold text-[11px]">
                         {p.token_number}
                       </span>
                     </td>
-                    <td className="px-6 py-4 font-medium text-gray-900">{p.name}</td>
-                    <td className="px-6 py-4 text-gray-600">{p.age}</td>
-                    <td className="px-6 py-4 text-gray-600">{p.gender}</td>
-                    <td className="px-6 py-4 text-gray-600">{p.phone || '-'}</td>
-                    <td className="px-6 py-4 text-gray-600">{p.current_step || '-'}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(p.status)}`}>
+                    <td className="px-4 py-2.5 text-xs font-medium text-gray-900">{p.name}</td>
+                    <td className="px-4 py-2.5 text-xs text-gray-600">{p.age}</td>
+                    <td className="px-4 py-2.5 text-xs text-gray-600">{p.gender}</td>
+                    <td className="px-4 py-2.5 text-xs text-gray-600">{p.phone || '-'}</td>
+                    <td className="px-4 py-2.5 text-xs text-gray-600">{p.current_step || '-'}</td>
+                    <td className="px-4 py-2.5">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusBadge(p.status)}`}>
                         {formatStatus(p.status)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-500 text-sm">
+                    <td className="px-4 py-2.5 text-[11px] text-gray-500">
                       {p.created_at
                         ? new Date(p.created_at).toLocaleString('en-US', {
                             month: 'short',
@@ -170,7 +168,6 @@ export default function ParticipantList() {
               </tbody>
             </table>
           </div>
-
         </div>
       )}
     </div>

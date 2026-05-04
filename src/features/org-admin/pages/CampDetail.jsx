@@ -57,97 +57,95 @@ export default function CampDetail() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
         <button
           onClick={() => navigate('/org-dashboard/camps')}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
+          <ArrowLeft className="w-4 h-4 text-gray-500" />
         </button>
         <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="font-poppins text-2xl lg:text-3xl font-bold text-gray-900">
-              {camp.name}
-            </h1>
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(camp.status)}`}>
+          <div className="flex items-center gap-2">
+            <h1 className="font-poppins text-lg font-bold text-gray-900">{camp.name}</h1>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusBadgeClass(camp.status)}`}>
               {formatStatus(camp.status)}
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-4 mt-2 text-gray-600">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
+          <div className="flex flex-wrap items-center gap-3 mt-1 text-[11px] text-gray-500">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-3 h-3" />
               {new Date(camp.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
             </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
+            <div className="flex items-center gap-1.5">
+              <MapPin className="w-3 h-3" />
               {camp.location}
             </div>
-            <div className="flex items-center gap-2">
-              <ListChecks className="w-4 h-4" />
+            <div className="flex items-center gap-1.5">
+              <ListChecks className="w-3 h-3" />
               {camp.eventType}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <Users className="w-6 h-6" />
+      <div className="grid grid-cols-4 gap-3">
+        <div className="bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl p-4 text-white shadow-md">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
+              <Users className="w-4 h-4" />
             </div>
+            <p className="text-primary-100 text-xs font-medium">Total</p>
           </div>
-          <p className="text-primary-100 text-sm font-medium mb-1">Total</p>
-          <p className="text-3xl font-bold">{camp.summary.total}</p>
+          <p className="text-2xl font-bold">{camp.summary.total}</p>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-green-600" />
+        <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-9 h-9 bg-green-100 rounded-lg flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
             </div>
+            <p className="text-gray-500 text-xs font-medium">Completed</p>
           </div>
-          <p className="text-gray-500 text-sm font-medium mb-1">Completed</p>
-          <p className="text-3xl font-bold text-gray-900">{camp.summary.completed}</p>
+          <p className="text-2xl font-bold text-gray-900">{camp.summary.completed}</p>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-              <Activity className="w-6 h-6 text-yellow-600" />
+        <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-9 h-9 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <Activity className="w-4 h-4 text-yellow-600" />
             </div>
+            <p className="text-gray-500 text-xs font-medium">In Progress</p>
           </div>
-          <p className="text-gray-500 text-sm font-medium mb-1">In Progress</p>
-          <p className="text-3xl font-bold text-gray-900">{camp.summary.inProgress}</p>
+          <p className="text-2xl font-bold text-gray-900">{camp.summary.inProgress}</p>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-              <Clock className="w-6 h-6 text-gray-600" />
+        <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center">
+              <Clock className="w-4 h-4 text-gray-600" />
             </div>
+            <p className="text-gray-500 text-xs font-medium">Not Started</p>
           </div>
-          <p className="text-gray-500 text-sm font-medium mb-1">Not Started</p>
-          <p className="text-3xl font-bold text-gray-900">{camp.summary.notStarted}</p>
+          <p className="text-2xl font-bold text-gray-900">{camp.summary.notStarted}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="font-poppins text-xl font-bold text-gray-900 mb-4">Step Completion</h2>
-          <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <h2 className="font-poppins text-sm font-bold text-gray-900 mb-3">Step Completion</h2>
+          <div className="space-y-2.5">
             {camp.steps.map((step) => (
-              <div key={step.id} className="p-4 bg-gray-50 rounded-xl">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-gray-900">{step.name}</span>
-                  <span className="text-sm text-gray-600">
+              <div key={step.id} className="px-3 py-2.5 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-semibold text-gray-800">{step.name}</span>
+                  <span className="text-[11px] text-gray-500">
                     {step.done} done / {step.done + step.pending} total
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 rounded-full h-1.5">
                   <div 
-                    className="bg-gradient-to-r from-primary-500 to-primary-600 h-2 rounded-full transition-all"
+                    className="bg-gradient-to-r from-primary-500 to-primary-600 h-1.5 rounded-full transition-all"
                     style={{ width: `${(step.done / (step.done + step.pending)) * 100}%` }}
                   ></div>
                 </div>
@@ -156,19 +154,19 @@ export default function CampDetail() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <h2 className="font-poppins text-xl font-bold text-gray-900 mb-4">Staff</h2>
-          <div className="space-y-3">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <h2 className="font-poppins text-sm font-bold text-gray-900 mb-3">Staff</h2>
+          <div className="space-y-2">
             {camp.staff.map((staff) => (
-              <div key={staff.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary-400 to-primary-500 rounded-full flex items-center justify-center text-white font-semibold">
+              <div key={staff.id} className="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-lg">
+                <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-500 rounded-full flex items-center justify-center text-white text-xs font-semibold">
                   {staff.name.charAt(0)}
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{staff.name}</p>
-                  <p className="text-sm text-gray-500">{staff.step}</p>
+                  <p className="text-xs font-semibold text-gray-800">{staff.name}</p>
+                  <p className="text-[11px] text-gray-500">{staff.step}</p>
                 </div>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-200 text-gray-700">
                   {staff.role}
                 </span>
               </div>
@@ -177,25 +175,25 @@ export default function CampDetail() {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-2.5">
         <button 
           onClick={() => navigate(`/org-dashboard/camps/${id}/staff`)}
-          className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 font-semibold py-2.5 px-5 rounded-xl hover:bg-gray-50 transition-all"
+          className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-all"
         >
-          <User className="w-5 h-5" />
+          <User className="w-3.5 h-3.5" />
           Assign Staff
         </button>
         <button 
           onClick={() => navigate(`/org-dashboard/camps/${id}/kiosk-token`)}
-          className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 font-semibold py-2.5 px-5 rounded-xl hover:bg-gray-50 transition-all"
+          className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-all"
         >
-          <QrCode className="w-5 h-5" />
+          <QrCode className="w-3.5 h-3.5" />
           Kiosk Token
         </button>
         <button 
-          className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 font-semibold py-2.5 px-5 rounded-xl hover:bg-gray-50 transition-all"
+          className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-all"
         >
-          <FileText className="w-5 h-5" />
+          <FileText className="w-3.5 h-3.5" />
           View Report
         </button>
       </div>

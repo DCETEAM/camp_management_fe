@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   BarChart3,
   Image,
+  ClipboardList,
 } from 'lucide-react'
 import { useAuth } from '../../features/auth/contexts/auth-context'
 
@@ -25,10 +26,15 @@ export default function MainLayout({ children }) {
   const isSuperAdminSection = location.pathname.startsWith('/admin-dashboard')
   const isOrgAdminSection = location.pathname.startsWith('/org-dashboard')
   const isOrganizerSection = location.pathname.startsWith('/camp-dashboard')
+  const isStaffSection = location.pathname.startsWith('/staff-workstation')
 
   // Extract camp ID from organizer URLs like /camp-dashboard/:id/...
   const campIdMatch = location.pathname.match(/^\/camp-dashboard\/(\d+)/)
   const campId = campIdMatch ? campIdMatch[1] : ''
+
+  // Extract camp ID from staff URLs like /staff-workstation/:campId/...
+  const staffCampIdMatch = location.pathname.match(/^\/staff-workstation\/(\d+)/)
+  const staffCampId = staffCampIdMatch ? staffCampIdMatch[1] : ''
 
   const superAdminNavigation = [
     { 
@@ -82,13 +88,28 @@ export default function MainLayout({ children }) {
       href: `/camp-dashboard/${campId}/report`,
       icon: BarChart3
     },
+    {
+      name: 'Media Gallery',
+      href: `/camp-dashboard/${campId}/media`,
+      icon: Image
+    },
   ] : []
 
-  const navigation = isOrganizerSection
-    ? organizerNavigation
-    : isOrgAdminSection
-      ? orgAdminNavigation
-      : superAdminNavigation
+  const staffNavigation = staffCampId ? [
+    {
+      name: 'My Queue',
+      href: `/staff-workstation/${staffCampId}/queue`,
+      icon: ClipboardList
+    },
+  ] : []
+
+  const navigation = isStaffSection
+    ? staffNavigation
+    : isOrganizerSection
+      ? organizerNavigation
+      : isOrgAdminSection
+        ? orgAdminNavigation
+        : superAdminNavigation
 
   return (
     <div className="min-h-screen bg-gray-50 font-inter">
@@ -112,7 +133,7 @@ export default function MainLayout({ children }) {
             </div>
             <div>
               <h2 className="font-poppins font-bold text-gray-900">Camp Manager</h2>
-              <p className="text-xs text-gray-500">{isOrganizerSection ? 'Organizer Panel' : isOrgAdminSection ? 'Organization Panel' : 'Admin Panel'}</p>
+              <p className="text-xs text-gray-500">{isStaffSection ? 'Staff Workstation' : isOrganizerSection ? 'Organizer Panel' : isOrgAdminSection ? 'Organization Panel' : 'Admin Panel'}</p>
             </div>
           </div>
 
@@ -185,7 +206,7 @@ export default function MainLayout({ children }) {
           </div>
         </header>
 
-        <main className="p-4 lg:p-8">
+        <main className="p-4 lg:p-6">
           {children}
         </main>
       </div>
