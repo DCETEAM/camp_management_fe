@@ -1,0 +1,295 @@
+Camp Management System 
+Screen-by-Screen Feature Document 
+Python (FastAPI) + React  |  All Screens, Fields, APIs & Logic 
+Super Admin Org Admin Organizer Staff Kiosk  
+Section 1: Auth Screens 
+These screens are public — no login required to reach them. 
+ 
+Screen 1 — Login Page 
+The first screen every user sees. After successful login, the app checks the user's role and redirects to the correct dashboard automatically. 
+ 
+Form fields 
+Field name Input type Required? Notes Email Email input Yes Must be a registered user email Password Password input Yes Hidden characters, show/hide toggle  
+Actions on this screen 
+* Submit button — calls POST /auth/login 
+* Forgot password link — goes to Screen 2 
+ 
+After login — redirect logic 
+* super_admin  ?  Admin dashboard 
+* org_admin    ?  Org dashboard (camps list) 
+* organizer    ?  Camp dashboard for their camp 
+* staff        ?  Step queue (their assigned step) 
+ 
+API calls 
+Method Endpoint What it does POST /auth/login Accepts email + password. Returns JWT access token and user info (id, name, role, org_id). GET /auth/me Returns current user info using the JWT token. Used on app load to restore session.  
+ 
+Screen 2 — Forgot Password Page 
+Simple one-field form to request a password reset email. 
+ 
+Form fields 
+Field name Input type Required? Notes Email Email input Yes Must match a user in the system  
+API calls 
+Method Endpoint What it does POST /auth/forgot-password Sends reset link to the email if it exists. Always shows success (never reveals whether email exists). POST /auth/reset-password Accepts token from email link + new password. Resets the password.  
+ 
+Section 2: Super Admin Screens 
+Only accessible by users with role = super_admin. These are platform configuration screens. 
+ 
+Screen 3 — Organizations List 
+A table of all organizations on the platform. The super admin can create new orgs, edit them, or deactivate them. 
+ 
+What is shown on screen 
+* Table: org name, type, email, phone, status (active/inactive), date created 
+* Search bar to filter by name 
+* Create new org button (opens a form/modal) 
+* Edit and Deactivate buttons per row 
+ 
+Create / Edit org — form fields 
+Field name Input type Required? Notes Name Text input Yes Organization name, e.g. City Eye Hospital Type Text input Yes e.g. Hospital, NGO, Government Email Email input Yes Main contact email Phone Phone input No  Address Textarea No  Active Toggle/Switch Yes Inactive orgs cannot log in  
+API calls 
+Method Endpoint What it does GET /organizations List all orgs. Supports ?search= query param. POST /organizations Create a new organization. PUT /organizations/:id Update org details or toggle active status.  
+Screen 4 — All Users 
+List of all users across all organizations. Super admin can change roles or deactivate users. 
+ 
+What is shown on screen 
+* Table: name, email, role, organization name, status, created date 
+* Filter by role and organization 
+* Edit role button per row 
+ 
+API calls 
+Method Endpoint What it does GET /users List all users. Supports ?org_id= and ?role= filters. PUT /users/:id Update user role or deactivate.  
+Screen 5 — Event Types 
+Event types define what kind of camp it is (Eye Camp, Dental Camp, etc.). Each event type has its own set of steps defined in the Step Template Builder. 
+ 
+What is shown on screen 
+* Table: event type name, description, number of steps, active status 
+* Create new / Edit / Deactivate buttons 
+ 
+Create / Edit event type — form fields 
+Field name Input type Required? Notes Name Text input Yes e.g. Eye Camp, Health Check Camp Description Textarea No Short description of the camp type Active Toggle Yes Inactive types cannot be used for new camps  
+API calls 
+Method Endpoint What it does GET /event-types List all event types. POST /event-types Create a new event type. PUT /event-types/:id Update or deactivate an event type.  
+Screen 6 — Step Template Builder 
+For each event type, the super admin defines the ordered list of steps that every participant will go through. Each step has a form — the fields are stored as JSON so they are flexible. 
+ 
+What is shown on screen 
+* Dropdown to select an event type 
+* Ordered list of steps (drag to reorder) 
+* Each step shows: step name, required role, number of form fields 
+* Add step button, edit step button, delete step button 
+ 
+Add / Edit step form — fields 
+Field name Input type Required? Notes Step name Text input Yes e.g. Registration, Doctor checkup, Pharmacy Step order Number (auto) Yes Auto-assigned based on position in list Role required Dropdown Yes Which role handles this step: staff, organizer, etc. Form fields JSON builder No Each field has: key, label, type (text/dropdown/date/file), options (for dropdowns), required flag  
+Example form_fields JSON stored in DB 
+[{"key":"vision_r","label":"Right eye vision","type":"text","required":true},  {"key":"diagnosis","label":"Diagnosis","type":"dropdown","required":true,   "options":["Normal","Cataract","Glaucoma","Referred"]},  {"key":"prescription","label":"Prescription photo","type":"file","required":false}] 
+ 
+API calls 
+Method Endpoint What it does GET /step-templates?event_type_id= Get all steps for an event type, ordered. POST /step-templates Create a new step for an event type. PUT /step-templates/:id Update step details or form fields JSON. DELETE /step-templates/:id Delete a step (only if no responses exist for it). PATCH /step-templates/reorder Save new step_order values after drag-to-reorder.  
+ 
+Section 3: Org Admin Screens 
+Accessible by org_admin and super_admin. These screens manage one organization's camps, users, and staff assignments. 
+ 
+Screen 7 — Org Users Management 
+The org admin manages users within their organization — invite new users, set their role, and deactivate if needed. 
+ 
+What is shown on screen 
+* Table: name, email, role, active status, date joined 
+* Invite user button (sends email invite) 
+* Edit role / Deactivate buttons per row 
+ 
+Invite user — form fields 
+Field name Input type Required? Notes Name Text input Yes  Email Email input Yes Invite email is sent to this address Role Dropdown Yes organizer or staff (org_admin cannot create other org_admins) Phone Phone input No   
+API calls 
+Method Endpoint What it does GET /organizations/:id/users List users in this org. POST /users/invite Send invite email and create a pending user. PUT /users/:id Update role or deactivate user.  
+Screen 8 — Camps List 
+Shows all camps for the organization. Org admin can create, edit, and manage camps from here. 
+ 
+What is shown on screen 
+* Cards or table: camp name, event type, date, location, status, participant count 
+* Filter by status: upcoming / active / closed 
+* Search by camp name 
+* Create new camp button 
+* Click a camp to go to Camp Detail (Screen 10) 
+ 
+API calls 
+Method Endpoint What it does GET /camps?org_id=&status= List camps for the org. Supports ?status= filter.  
+Screen 9 — Create / Edit Camp 
+Form to create a new camp or edit an existing one. 
+ 
+Form fields 
+Field name Input type Required? Notes Camp name Text input Yes e.g. Coimbatore Eye Camp Jan 2025 Event type Dropdown Yes Picks from active event types. This determines what steps the camp will have. Camp date Date picker Yes The date the camp will run Location Text input Yes Full address or venue name Status Dropdown Yes upcoming / active / closed. Set to active on the camp day.  
+API calls 
+Method Endpoint What it does POST /camps Create a new camp. created_by is set from JWT. PUT /camps/:id Update camp details or change status. GET /camps/:id Get single camp details.  
+Screen 10 — Camp Detail 
+Overview page for a single camp. Shows summary stats and links to staff assignment, participant list, and report. 
+ 
+What is shown on screen 
+* Camp info: name, date, location, status, event type 
+* Summary numbers: total participants, completed, in progress, not started 
+* Step completion table: each step, how many done, how many pending 
+* Staff list: who is assigned to which step 
+* Quick links: Register participant, View all participants, View report 
+ 
+API calls 
+Method Endpoint What it does GET /camps/:id Camp info and status. GET /camps/:id/summary Participant counts and step completion stats. GET /camps/:id/staff List of staff assigned to this camp.  
+Screen 11 — Camp Staff Assignment 
+Assign org users to specific steps in a camp. One user can be assigned to multiple steps. Multiple users can be assigned to the same step. 
+ 
+What is shown on screen 
+* Left column: list of steps in the camp (from step templates) 
+* Right column: users currently assigned to the selected step 
+* Add user to step — dropdown of org users 
+* Remove user from step button 
+ 
+Assign staff — form fields 
+Field name Input type Required? Notes Step Selected from list Yes The step to assign to User Dropdown Yes Pick from org users Role in camp Auto from user role Yes Inherited from user's role  
+API calls 
+Method Endpoint What it does GET /camps/:id/staff Get all staff assignments for this camp. POST /camp-staff Assign a user to a step in the camp. DELETE /camp-staff/:id Remove a staff assignment.  
+Screen 12 — Generate Kiosk Token 
+Generates a short-lived access token for the registration kiosk device. This token is not linked to a user — it is linked only to the camp. It expires at midnight on the camp day. 
+ 
+What is shown on screen 
+* Camp name and date displayed 
+* Generate token button 
+* Shows the kiosk URL or QR code after generation 
+* Copy button and Regenerate button 
+ 
+API calls 
+Method Endpoint What it does POST /camps/:id/kiosk-token Generates a short-lived JWT for the camp kiosk. Token expires at end of camp day.  
+ 
+Section 4: Kiosk Screen (Registration) 
+This screen runs on a shared tablet at the camp entrance. No personal login needed — it uses the kiosk token generated by the org admin. 
+ 
+Screen 13 — Participant Registration 
+A simple, clean form designed for quick data entry. After submission, shows a large token number for the participant to remember. 
+ 
+Form fields 
+Field name Input type Required? Notes Name Text input Yes Full name of the participant Age Number input Yes Numeric age Gender Radio / dropdown Yes Male / Female / Other Phone Phone input No Mobile number for follow-up  
+After submit 
+* Token number is auto-generated (e.g. A001, A002...) by the backend 
+* Screen shows big token number — participant notes it down 
+* Reset button appears to register the next participant 
+* Form clears automatically after 5 seconds 
+ 
+API calls 
+Method Endpoint What it does POST /participants Create participant. camp_id from kiosk token. Token number auto-generated. Returns token_number.  
+ 
+Section 5: Organizer Screens 
+Accessible by organizer and org_admin. These screens let the organizer monitor the camp in real time and manage participants. 
+ 
+Screen 14 — Camp Dashboard 
+The organizer's home screen during a camp. Shows real-time overview of participant flow across all steps. 
+ 
+What is shown on screen 
+* Camp name, date, location, status badge 
+* Big number cards: Total registered, Completed all steps, In progress, Not started 
+* Step-by-step table: each step name, count waiting, count done 
+* Staff on duty list with their assigned step 
+* Quick action buttons: Register participant, Full participant list, View report 
+ 
+API calls 
+Method Endpoint What it does GET /camps/:id/summary Participant counts per status. GET /camps/:id/step-stats Per-step waiting and completed counts. GET /camps/:id/staff Staff list for the camp.  
+Screen 15 — Participant List 
+Full list of all registered participants in the camp. Organizer can search, filter, and click into any participant to see their full journey. 
+ 
+What is shown on screen 
+* Search bar: search by name or token number 
+* Filter by status: all / in progress / completed / not started 
+* Table: token number, name, age, gender, phone, current step, overall status, registered time 
+* Click a row to open Participant Detail (Screen 16) 
+ 
+API calls 
+Method Endpoint What it does GET /camps/:id/participants?search=&status= Paginated participant list with optional search and status filter.  
+Screen 16 — Participant Detail 
+Full journey of a single participant. Shows every step they have gone through, what was recorded, and any files uploaded. 
+ 
+What is shown on screen 
+* Participant info: name, age, gender, phone, token number, registered at 
+* Timeline or table of steps: 
+*    Step name | Handled by | Outcome | Completed at | Files uploaded 
+* For completed steps: click to expand and see the full form response data 
+* For pending steps: shows 'Waiting' badge 
+ 
+API calls 
+Method Endpoint What it does GET /participants/:id Participant basic info. GET /participants/:id/step-responses All step responses for this participant, with outcome and response data. GET /participants/:id/media All uploaded files for this participant.  
+Screen 17 — Camp Report 
+Summary statistics for the camp. Useful for the organizer to share outcomes after the camp. 
+ 
+What is shown on screen 
+* Total participants registered 
+* Completion rate (% who finished all steps) 
+* Gender breakdown: Male / Female / Other count 
+* Age groups: 0-18 / 19-40 / 41-60 / 60+ count 
+* Per-step outcome breakdown: e.g. for Eye Camp — Normal: 120, Cataract: 45, Referred: 30 
+* Export to CSV button 
+ 
+API calls 
+Method Endpoint What it does GET /camps/:id/report Returns all summary stats for the camp. GET /camps/:id/report/export Returns CSV file download of full participant + outcome data.  
+Screen 18 — Media Gallery 
+Browse all files uploaded during the camp — photos, scans, prescriptions, etc. 
+ 
+What is shown on screen 
+* Filter by step name, filter by participant token/name 
+* Grid of file thumbnails (images) or file icons (PDFs, docs) 
+* Click a file to view or download 
+* File metadata: uploader name, uploaded at, participant token, step name 
+ 
+API calls 
+Method Endpoint What it does GET /camps/:id/media?step_template_id=&participant_id= List all media files for the camp with optional filters. GET /media/:id/file Serve/download the actual file.  
+ 
+Section 6: Staff Workstation Screens 
+These screens are for step staff — doctors, nurses, data entry operators, etc. A staff member only sees their assigned step. They cannot see other steps or other staff's queues. 
+ 
+Screen 19 — My Queue (Step Queue) 
+The main screen for a staff member during the camp. Shows the list of participants waiting for their step, ordered by token number. 
+ 
+What is shown on screen 
+* Step name at the top (e.g. 'Doctor Checkup - Dr. Ravi') 
+* Count of participants waiting 
+* List of waiting participants: token number, name, age, gender 
+* 'Call Next' button — moves to StepFormPage for the next participant 
+* 'Skip' option to move a participant to the bottom of the queue 
+* Currently serving badge if one participant is already in progress 
+ 
+API calls 
+Method Endpoint What it does GET /camps/:id/queue?step_template_id= Returns ordered list of participants waiting for this step (no step_response yet for this step). PATCH /participants/:id/status Update participant status (e.g. mark as in-progress when called).  
+Screen 20 — Step Form (Dynamic Form) 
+The form that the staff fills for each participant. The fields are dynamically generated from the step template's form_fields JSON — so this one component handles all step types. 
+ 
+What is shown on screen 
+* Participant info bar at top: token number, name, age, gender 
+* Step name 
+* Dynamically rendered form fields (see types below) 
+* File upload section (if any field has type: file) 
+* Outcome dropdown: Treated / Referred / No action / Incomplete 
+* Submit button — saves response and goes back to queue 
+* Previous responses section (if participant visited this step before) 
+ 
+Supported form field types 
+Field name Input type Required? Notes text Text input Depends on field config Free text answer number Number input Depends on field config Numeric only dropdown Select dropdown Depends on field config Options list from JSON date Date picker Depends on field config  boolean Yes / No toggle Depends on field config  textarea Multi-line text Depends on field config For longer notes file File upload Depends on field config Image or PDF, triggers media upload  
+Data saved to DB 
+* step_responses table: participant_id, step_template_id, handled_by (staff user id), response_data (JSON), outcome, completed_at 
+* media_files table: one row per uploaded file 
+ 
+API calls 
+Method Endpoint What it does GET /step-templates/:id Get step template including form_fields JSON to render the form. POST /step-responses Save the completed form. Body: participant_id, step_template_id, response_data JSON, outcome. POST /media Upload a file (multipart/form-data). Returns file id to save in response_data. GET /participants/:id/step-responses?step_template_id= Check if this participant already has a response for this step.  
+ 
+Section 7: Shared Components & Utilities 
+ 
+Navigation / Sidebar 
+* Super admin: Organizations, All Users, Event Types, Step Templates 
+* Org admin: Users, Camps, Reports 
+* Organizer: Camp Dashboard, Participants, Report, Media Gallery 
+* Staff: My Queue (only one item) 
+* All: Profile settings, Logout 
+ 
+Profile / Settings Page 
+Any logged-in user can update their own name, phone, and password. 
+Field name Input type Required? Notes Name Text input Yes  Phone Phone input No  Current password Password input Yes Required to change password New password Password input No Only if changing password  
+Method Endpoint What it does PUT /users/me Update own profile. Password change requires current_password.  
+ 
+Section 8: All Screens at a Glance 
+ 
+# Screen Role Purpose 1 Login All users Email + password, role-based redirect 2 Forgot password All users Reset password via email link 3 Organizations list Super admin Manage all orgs on the platform 4 All users Super admin View and manage all users across orgs 5 Event types Super admin Define camp types (Eye, Dental, etc.) 6 Step template builder Super admin Define ordered steps + dynamic form for each 7 Org users management Org admin Invite users, assign roles within org 8 Camps list Org admin All camps for the org with status filter 9 Create / edit camp Org admin Set camp name, date, location, event type 10 Camp detail Org admin Stats overview, staff list, quick links 11 Camp staff assignment Org admin Assign users to steps in a camp 12 Generate kiosk token Org admin Create kiosk URL/QR for registration device 13 Participant registration Kiosk Register participants, show token number 14 Camp dashboard Organizer Real-time participant flow overview 15 Participant list Organizer Search and filter all camp participants 16 Participant detail Organizer Full step journey for one participant 17 Camp report Organizer Summary stats and CSV export 18 Media gallery Organizer Browse all uploaded files for the camp 19 My queue Staff Waiting participants for this staff's step 20 Step form Staff Dynamic form + file upload + outcome  
+ 
+Camp Management System — Screen Document v1.0  | 
+
