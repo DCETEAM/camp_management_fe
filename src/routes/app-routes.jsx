@@ -15,6 +15,10 @@ import CreateEditCamp from '../features/org-admin/pages/CreateEditCamp'
 import CampDetail from '../features/org-admin/pages/CampDetail'
 import CampStaffAssignment from '../features/org-admin/pages/CampStaffAssignment'
 import GenerateKioskToken from '../features/org-admin/pages/GenerateKioskToken'
+import CampDashboard from '../features/organizer/pages/CampDashboard'
+import ParticipantList from '../features/organizer/pages/ParticipantList'
+import ParticipantDetail from '../features/organizer/pages/ParticipantDetail'
+import CampReport from '../features/organizer/pages/CampReport'
 
 export default function AppRoutes() {
 	return (
@@ -98,6 +102,32 @@ export default function AppRoutes() {
         <Route path="/org-dashboard/camps/:id/kiosk-token" element={
           <MainLayout>
             <GenerateKioskToken />
+          </MainLayout>
+        } />
+
+        {/* Organizer Routes */}
+
+        <Route path="/camp-dashboard/:id" element={
+          <MainLayout>
+            <CampDashboard />
+          </MainLayout>
+        } />
+
+        <Route path="/camp-dashboard/:id/participants" element={
+          <MainLayout>
+            <ParticipantList />
+          </MainLayout>
+        } />
+
+        <Route path="/camp-dashboard/:id/participants/:participantId" element={
+          <MainLayout>
+            <ParticipantDetail />
+          </MainLayout>
+        } />
+
+        <Route path="/camp-dashboard/:id/report" element={
+          <MainLayout>
+            <CampReport />
           </MainLayout>
         } />
 			</Routes>

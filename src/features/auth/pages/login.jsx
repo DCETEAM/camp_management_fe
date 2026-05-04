@@ -19,7 +19,9 @@ export default function Login() {
 		setLoading(true)
 
 		try {
-			const { access_token, user } = await authService.login(email, password)
+			const data = await authService.login(email, password)
+			const access_token = data.access_token || data.token
+			const user = data.user
 			login(user, access_token)
 
 			const roleRoutes = {
@@ -32,7 +34,13 @@ export default function Login() {
 			const redirectPath = roleRoutes[user.role] || '/dashboard'
 			navigate(redirectPath)
 		} catch (err) {
-			setError(err.response?.data?.message || 'Login failed. Please try again.')
+			const errData = err.response?.data
+			if (errData?.errors) {
+				const firstError = Object.values(errData.errors).flat()[0]
+				setError(firstError || errData.message || 'Login failed. Please try again.')
+			} else {
+				setError(errData?.message || 'Login failed. Please try again.')
+			}
 		} finally {
 			setLoading(false)
 		}

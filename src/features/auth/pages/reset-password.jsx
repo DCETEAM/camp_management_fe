@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
-import axios from 'axios'
+import authService from '../services/auth-service'
 import { Eye, EyeOff, AlertCircle, Loader, CheckCircle, ArrowLeft } from 'lucide-react'
 
 export default function ResetPassword() {
@@ -54,10 +54,7 @@ export default function ResetPassword() {
 		setLoading(true)
 
 		try {
-			await axios.post('/auth/reset-password', {
-				token,
-				password,
-			})
+			await authService.resetPassword(token, password)
 
 			setSuccess(true)
 			setTimeout(() => {

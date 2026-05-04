@@ -10,7 +10,10 @@ import {
   X,
   ListChecks,
   Calendar as CalendarIcon,
-  User
+  User,
+  LayoutDashboard,
+  BarChart3,
+  Image,
 } from 'lucide-react'
 import { useAuth } from '../../features/auth/contexts/auth-context'
 
@@ -21,6 +24,11 @@ export default function MainLayout({ children }) {
 
   const isSuperAdminSection = location.pathname.startsWith('/admin-dashboard')
   const isOrgAdminSection = location.pathname.startsWith('/org-dashboard')
+  const isOrganizerSection = location.pathname.startsWith('/camp-dashboard')
+
+  // Extract camp ID from organizer URLs like /camp-dashboard/:id/...
+  const campIdMatch = location.pathname.match(/^\/camp-dashboard\/(\d+)/)
+  const campId = campIdMatch ? campIdMatch[1] : ''
 
   const superAdminNavigation = [
     { 
@@ -58,7 +66,29 @@ export default function MainLayout({ children }) {
     }
   ]
 
-  const navigation = isOrgAdminSection ? orgAdminNavigation : superAdminNavigation
+  const organizerNavigation = campId ? [
+    {
+      name: 'Dashboard',
+      href: `/camp-dashboard/${campId}`,
+      icon: LayoutDashboard
+    },
+    {
+      name: 'Participants',
+      href: `/camp-dashboard/${campId}/participants`,
+      icon: Users
+    },
+    {
+      name: 'Report',
+      href: `/camp-dashboard/${campId}/report`,
+      icon: BarChart3
+    },
+  ] : []
+
+  const navigation = isOrganizerSection
+    ? organizerNavigation
+    : isOrgAdminSection
+      ? orgAdminNavigation
+      : superAdminNavigation
 
   return (
     <div className="min-h-screen bg-gray-50 font-inter">
@@ -82,7 +112,7 @@ export default function MainLayout({ children }) {
             </div>
             <div>
               <h2 className="font-poppins font-bold text-gray-900">Camp Manager</h2>
-              <p className="text-xs text-gray-500">{isOrgAdminSection ? 'Organization Panel' : 'Admin Panel'}</p>
+              <p className="text-xs text-gray-500">{isOrganizerSection ? 'Organizer Panel' : isOrgAdminSection ? 'Organization Panel' : 'Admin Panel'}</p>
             </div>
           </div>
 
