@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   Users,
@@ -10,42 +10,47 @@ import {
   ListChecks,
   UserPlus,
   BarChart3,
+  Loader,
+  AlertCircle
 } from 'lucide-react'
+import organizerService from '../services/organizer-service'
 
 export default function CampDashboard() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [camp, setCamp] = useState(null)
+  const [summary, setSummary] = useState(null)
+  const [stepStats, setStepStats] = useState([])
+  const [staff, setStaff] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const [camp] = useState({
-    id: id,
-    name: 'Coimbatore Eye Camp Jan 2025',
-    event_type: 'Eye Camp',
-    date: '2025-01-15',
-    location: 'Coimbatore Community Hall',
-    status: 'active',
-  })
+  useEffect(() => {
+    if (id) {
+      fetchCampData()
+    }
+  }, [id])
 
-  const [summary] = useState({
-    total: 210,
-    completed: 145,
-    in_progress: 40,
-    not_started: 25,
-  })
-
-  const [stepStats] = useState([
-    { id: 1, name: 'Registration', done: 210, waiting: 0 },
-    { id: 2, name: 'Vision Test', done: 180, waiting: 30 },
-    { id: 3, name: 'Doctor Checkup', done: 155, waiting: 55 },
-    { id: 4, name: 'Pharmacy', done: 145, waiting: 65 },
-  ])
-
-  const [staff] = useState([
-    { id: 1, name: 'Dr. Ravi Kumar', role: 'organizer', step: 'Overall Coordination' },
-    { id: 2, name: 'Anitha S', role: 'staff', step: 'Registration' },
-    { id: 3, name: 'Dr. Meena P', role: 'staff', step: 'Vision Test' },
-    { id: 4, name: 'Dr. Suresh R', role: 'staff', step: 'Doctor Checkup' },
-    { id: 5, name: 'Karthik M', role: 'staff', step: 'Pharmacy' },
-  ])
+  const fetchCampData = async () => {
+    try {
+      setLoading(true)
+      const [campData, summaryData, stepStatsData, staffData] = await Promise.all([
+        organizerService.getCampDetail(id),
+        organizerService.getCampSummary(id),
+        organizerService.getStepStats(id),
+        organizerService.getCampStaff(id)
+      ])
+      setCamp(campData)
+      setSummary(summaryData)
+      setStepStats(stepStatsData)
+      setStaff(staffData)
+      setError(null)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load camp data')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -54,6 +59,23 @@ export default function CampDashboard() {
       case 'closed': return 'bg-gray-100 text-gray-700'
       default: return 'bg-gray-100 text-gray-700'
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader className="w-8 h-8 text-primary-500 animate-spin" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96">
+        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+        <p className="text-xs text-gray-500">{camp?.event_type?.name || 'Unknown'}</p>
+      </div>
+    )
   }
 
   const summaryCards = [
@@ -104,10 +126,10 @@ export default function CampDashboard() {
           )}
         </div>
         <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-gray-500">
-          {camp?.date && (
+          {camp?.camp_date && (
             <div className="flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5" />
-              {new Date(camp.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+              {camp?.camp_date ? new Date(camp.camp_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'}
             </div>
           )}
           {camp?.location && (
@@ -168,9 +190,9 @@ export default function CampDashboard() {
                 const total = (step.waiting || 0) + (step.done || 0)
                 const pct = total > 0 ? (step.done / total) * 100 : 0
                 return (
-                  <div key={step.id || index} className="px-3 py-2.5 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs font-semibold text-gray-800">{step.name || step.step_name}</span>
+                  <div key={step.step_template_id || index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-gray-900">{step.step_name}</p>
                       <span className="text-[11px] text-gray-500">
                         {step.done || 0} done · {step.waiting || 0} waiting
                       </span>
@@ -196,7 +218,7 @@ export default function CampDashboard() {
           {Array.isArray(staff) && staff.length > 0 ? (
             <div className="space-y-2">
               {staff.map((member, index) => (
-                <div key={member.id || index} className="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-lg">
+                <div key={member.id || index} className="flex items-center gap-2 text-xs py-2 bg-gray-50 rounded-lg">
                   <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-500 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                     {(member.name || 'U').charAt(0).toUpperCase()}
                   </div>

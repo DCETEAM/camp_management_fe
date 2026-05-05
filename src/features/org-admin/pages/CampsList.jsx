@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Search, 
   Plus, 
@@ -9,50 +9,43 @@ import {
   CalendarCheck,
   Activity,
   CheckCircle2,
-  Clock
+  Clock,
+  Loader,
+  AlertCircle
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import orgAdminService from '../services/org-admin-service'
 
 export default function CampsList() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [camps, setCamps] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const [camps, setCamps] = useState([
-    {
-      id: 1,
-      name: 'Coimbatore Eye Camp Jan 2025',
-      eventType: 'Eye Camp',
-      date: '2025-01-15',
-      location: 'Coimbatore Community Hall',
-      status: 'upcoming',
-      participantCount: 0
-    },
-    {
-      id: 2,
-      name: 'Chennai Dental Camp',
-      eventType: 'Dental Camp',
-      date: '2025-01-20',
-      location: 'Chennai Dental College',
-      status: 'active',
-      participantCount: 145
-    },
-    {
-      id: 3,
-      name: 'Madurai Health Check Camp',
-      eventType: 'General Health Check',
-      date: '2024-12-10',
-      location: 'Madurai Public School',
-      status: 'closed',
-      participantCount: 280
+  useEffect(() => {
+    fetchCamps()
+  }, [searchQuery, statusFilter])
+
+  const fetchCamps = async () => {
+    try {
+      setLoading(true)
+      const params = {}
+      if (statusFilter !== 'all') params.status = statusFilter
+      if (searchQuery) params.search = searchQuery
+      
+      const data = await orgAdminService.getCamps(params)
+      setCamps(data.data || data)
+      setError(null)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load camps')
+    } finally {
+      setLoading(false)
     }
-  ])
+  }
 
-  const filteredCamps = camps.filter(camp => {
-    const matchesSearch = camp.name.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || camp.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
+  const filteredCamps = camps
 
   const getStatusBadgeClass = (status) => {
     switch(status) {
@@ -158,51 +151,60 @@ export default function CampsList() {
 
         <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredCamps.map((camp) => (
-            <div
-              key={camp.id}
-              onClick={() => navigate(`/org-dashboard/camps/${camp.id}`)}
-              className="border border-gray-200 rounded-xl p-4 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer group"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusBadgeClass(camp.status)}`}>
-                  {getStatusIcon(camp.status)}
-                  {formatStatus(camp.status)}
-                </span>
-              </div>
-
-              <h3 className="text-xs font-semibold text-gray-900 mb-1.5 group-hover:text-primary-600 transition-colors">
-                {camp.name}
-              </h3>
-
-              <div className="space-y-1.5 text-[11px] text-gray-600">
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-3 h-3 text-gray-400" />
-                  {new Date(camp.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+            <div key={camp.id} className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/org-dashboard/camps/${camp.id}`)}>
+              <div className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className={`p-2 rounded-lg ${getStatusBadgeClass(camp.status).replace('text-', 'bg-').replace('700', '100').replace('blue-100', 'blue-100').replace('green-100', 'green-100').replace('gray-100', 'gray-100')}`}>
+                      {getStatusIcon(camp.status)}
+                    </div>
+                    <div>
+                      <h3 className="font-poppins text-sm font-semibold text-gray-900">{camp.name}</h3>
+                      <p className="text-[11px] text-gray-500">{camp.event_type?.name || 'Unknown'}</p>
+                    </div>
+                  </div>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusBadgeClass(camp.status)}`}>
+                    {formatStatus(camp.status)}
+                  </span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="w-3 h-3 text-gray-400" />
-                  {camp.location}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <CalendarCheck className="w-3 h-3 text-gray-400" />
-                  {camp.eventType}
-                </div>
-              </div>
-
-              <div className="mt-3 pt-3 border-t border-gray-100 flex items-center">
-                <div className="flex items-center gap-1.5 text-[11px]">
-                  <Users className="w-3 h-3 text-gray-400" />
-                  <span className="font-semibold text-gray-900">{camp.participantCount}</span>
-                  <span className="text-gray-500">participants</span>
+                
+                <div className="space-y-2 text-[11px] text-gray-600">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                    {new Date(camp.camp_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                    {camp.location}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-gray-400" />
+                    {camp.participant_count || 0} participants
+                  </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {filteredCamps.length === 0 && (
-          <div className="p-8 text-center">
-            <CalendarCheck className="w-8 h-8 text-gray-300 mx-auto mb-3" />
+        {loading && (
+          <div className="text-center py-8">
+            <Loader className="w-12 h-12 text-primary-500 mx-auto mb-3 animate-spin" />
+            <p className="text-xs text-gray-500">Loading camps...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center py-8">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">Error</h3>
+            <p className="text-xs text-gray-500">{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && filteredCamps.length === 0 && (
+          <div className="text-center py-8">
+            <CalendarCheck className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <h3 className="text-sm font-semibold text-gray-900 mb-1">No camps found</h3>
             <p className="text-xs text-gray-400">Try adjusting your search or create a new camp</p>
           </div>

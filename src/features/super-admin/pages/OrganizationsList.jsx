@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Search, 
   Plus, 
@@ -10,8 +10,11 @@ import {
   Phone,
   Calendar,
   X,
-  Save
+  Save,
+  Loader,
+  AlertCircle
 } from 'lucide-react'
+import superAdminService from '../services/super-admin-service'
 
 export default function OrganizationsList() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -25,47 +28,40 @@ export default function OrganizationsList() {
     address: '',
     active: true
   })
+  const [organizations, setOrganizations] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [actionLoading, setActionLoading] = useState(false)
 
-  const [organizations, setOrganizations] = useState([
-    {
-      id: 1,
-      name: 'City Eye Hospital',
-      type: 'Hospital',
-      email: 'contact@cityeyehospital.org',
-      phone: '+91 98765 43210',
-      status: 'active',
-      dateCreated: '2024-01-15'
-    },
-    {
-      id: 2,
-      name: 'Community Health NGO',
-      type: 'NGO',
-      email: 'info@communityhealth.org',
-      phone: '+91 98765 43211',
-      status: 'active',
-      dateCreated: '2024-02-20'
-    },
-    {
-      id: 3,
-      name: 'Rural Health Care',
-      type: 'Government',
-      email: 'admin@ruralhealth.gov',
-      phone: '+91 98765 43212',
-      status: 'inactive',
-      dateCreated: '2024-03-10'
+  useEffect(() => {
+    fetchOrganizations()
+  }, [searchQuery])
+
+  const fetchOrganizations = async () => {
+    try {
+      setLoading(true)
+      const data = await superAdminService.getOrganizations(searchQuery)
+      setOrganizations(data.data || data)
+      setError(null)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load organizations')
+    } finally {
+      setLoading(false)
     }
-  ])
+  }
 
-  const filteredOrganizations = organizations.filter(org =>
-    org.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  const handleToggleStatus = (id) => {
-    setOrganizations(organizations.map(org =>
-      org.id === id 
-        ? { ...org, status: org.status === 'active' ? 'inactive' : 'active' }
-        : org
-    ))
+  const handleToggleStatus = async (org) => {
+    try {
+      setActionLoading(true)
+      await superAdminService.updateOrganization(org.id, {
+        active: !org.active
+      })
+      await fetchOrganizations()
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update status')
+    } finally {
+      setActionLoading(false)
+    }
   }
 
   const handleOpenModal = (org = null) => {
@@ -93,26 +89,32 @@ export default function OrganizationsList() {
     setIsModalOpen(true)
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (editingOrg) {
-      setOrganizations(organizations.map(org =>
-        org.id === editingOrg.id
-          ? { ...org, ...formData, status: formData.active ? 'active' : 'inactive' }
-          : org
-      ))
-    } else {
-      setOrganizations([
-        ...organizations,
-        {
-          id: Date.now(),
-          ...formData,
-          status: formData.active ? 'active' : 'inactive',
-          dateCreated: new Date().toISOString().split('T')[0]
-        }
-      ])
+    try {
+      setActionLoading(true)
+      const data = {
+        name: formData.name,
+        type: formData.type,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        active: formData.active
+      }
+      
+      if (editingOrg) {
+        await superAdminService.updateOrganization(editingOrg.id, data)
+      } else {
+        await superAdminService.createOrganization(data)
+      }
+      
+      await fetchOrganizations()
+      setIsModalOpen(false)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save organization')
+    } finally {
+      setActionLoading(false)
     }
-    setIsModalOpen(false)
   }
 
   return (
@@ -158,7 +160,7 @@ export default function OrganizationsList() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredOrganizations.map((org) => (
+              {organizations.map((org) => (
                 <tr key={org.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2">
@@ -189,17 +191,17 @@ export default function OrganizationsList() {
                   </td>
                   <td className="px-4 py-2.5">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                      org.status === 'active' 
+                      org.active 
                         ? 'bg-green-100 text-green-700' 
                         : 'bg-red-100 text-red-700'
                     }`}>
-                      {org.status === 'active' ? 'Active' : 'Inactive'}
+                      {org.active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
                       <Calendar className="w-3 h-3" />
-                      {new Date(org.dateCreated).toLocaleDateString()}
+                      {new Date(org.created_at).toLocaleDateString()}
                     </div>
                   </td>
                   <td className="px-4 py-2.5 text-right">
@@ -211,14 +213,15 @@ export default function OrganizationsList() {
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleToggleStatus(org.id)}
+                        onClick={() => handleToggleStatus(org)}
+                        disabled={actionLoading}
                         className={`p-2 rounded-lg transition-colors ${
-                          org.status === 'active'
+                          org.active
                             ? 'text-gray-400 hover:text-red-600 hover:bg-red-50'
                             : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
                         }`}
                       >
-                        {org.status === 'active' ? (
+                        {org.active ? (
                           <ToggleRight className="w-4 h-4" />
                         ) : (
                           <ToggleLeft className="w-4 h-4" />
@@ -232,7 +235,22 @@ export default function OrganizationsList() {
           </table>
         </div>
 
-        {filteredOrganizations.length === 0 && (
+        {loading && (
+          <div className="p-8 text-center">
+            <Loader className="w-8 h-8 text-primary-500 mx-auto mb-3 animate-spin" />
+            <p className="text-xs text-gray-500">Loading organizations...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="p-8 text-center">
+            <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-3" />
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">Error</h3>
+            <p className="text-xs text-gray-500">{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && organizations.length === 0 && (
           <div className="p-8 text-center">
             <Building2 className="w-8 h-8 text-gray-300 mx-auto mb-3" />
             <h3 className="text-sm font-semibold text-gray-900 mb-1">No organizations found</h3>
@@ -341,9 +359,14 @@ export default function OrganizationsList() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-semibold py-2 rounded-lg transition-all"
+                  disabled={actionLoading}
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-semibold py-2 rounded-lg transition-all disabled:from-gray-400 disabled:via-gray-400"
                 >
-                  <Save className="w-3.5 h-3.5" />
+                  {actionLoading ? (
+                    <Loader className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5" />
+                  )}
                   {editingOrg ? 'Save Changes' : 'Create'}
                 </button>
               </div>

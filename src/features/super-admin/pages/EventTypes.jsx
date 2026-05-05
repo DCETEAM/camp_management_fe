@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Search, 
   Plus, 
@@ -9,8 +9,11 @@ import {
   ListChecks,
   Calendar,
   X,
-  Save
+  Save,
+  Loader,
+  AlertCircle
 } from 'lucide-react'
+import superAdminService from '../services/super-admin-service'
 
 export default function EventTypes() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -21,44 +24,44 @@ export default function EventTypes() {
     description: '',
     active: true
   })
+  const [eventTypes, setEventTypes] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [actionLoading, setActionLoading] = useState(false)
 
-  const [eventTypes, setEventTypes] = useState([
-    {
-      id: 1,
-      name: 'Eye Camp',
-      description: 'Comprehensive eye checkup and vision screening',
-      steps: 5,
-      status: 'active',
-      dateCreated: '2024-01-05'
-    },
-    {
-      id: 2,
-      name: 'Dental Camp',
-      description: 'Dental health checkup and oral hygiene',
-      steps: 4,
-      status: 'active',
-      dateCreated: '2024-01-20'
-    },
-    {
-      id: 3,
-      name: 'General Health Check',
-      description: 'Complete health screening and vital checks',
-      steps: 6,
-      status: 'inactive',
-      dateCreated: '2024-02-10'
+  useEffect(() => {
+    fetchEventTypes()
+  }, [searchQuery])
+
+  const fetchEventTypes = async () => {
+    try {
+      setLoading(true)
+      const data = await superAdminService.getEventTypes()
+      setEventTypes(data.data || data)
+      setError(null)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load event types')
+    } finally {
+      setLoading(false)
     }
-  ])
+  }
 
   const filteredEventTypes = eventTypes.filter(type =>
-    type.name.toLowerCase().includes(searchQuery.toLowerCase())
+    type.name?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const handleToggleStatus = (id) => {
-    setEventTypes(eventTypes.map(type =>
-      type.id === id 
-        ? { ...type, status: type.status === 'active' ? 'inactive' : 'active' }
-        : type
-    ))
+  const handleToggleStatus = async (type) => {
+    try {
+      setActionLoading(true)
+      await superAdminService.updateEventType(type.id, {
+        active: !type.active
+      })
+      await fetchEventTypes()
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update status')
+    } finally {
+      setActionLoading(false)
+    }
   }
 
   const handleOpenModal = (type = null) => {
@@ -80,27 +83,29 @@ export default function EventTypes() {
     setIsModalOpen(true)
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (editingType) {
-      setEventTypes(eventTypes.map(type =>
-        type.id === editingType.id
-          ? { ...type, ...formData, status: formData.active ? 'active' : 'inactive' }
-          : type
-      ))
-    } else {
-      setEventTypes([
-        ...eventTypes,
-        {
-          id: Date.now(),
-          ...formData,
-          steps: 0,
-          status: formData.active ? 'active' : 'inactive',
-          dateCreated: new Date().toISOString().split('T')[0]
-        }
-      ])
+    try {
+      setActionLoading(true)
+      const data = {
+        name: formData.name,
+        description: formData.description,
+        active: formData.active
+      }
+      
+      if (editingType) {
+        await superAdminService.updateEventType(editingType.id, data)
+      } else {
+        await superAdminService.createEventType(data)
+      }
+      
+      await fetchEventTypes()
+      setIsModalOpen(false)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save event type')
+    } finally {
+      setActionLoading(false)
     }
-    setIsModalOpen(false)
   }
 
   return (
@@ -199,22 +204,22 @@ export default function EventTypes() {
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-1.5">
                       <ListChecks className="w-3 h-3 text-gray-400" />
-                      <span className="text-xs font-semibold text-gray-700">{type.steps} steps</span>
+                      <span className="text-xs font-semibold text-gray-700">{type.step_templates_count || 0} steps</span>
                     </div>
                   </td>
                   <td className="px-4 py-2.5">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                      type.status === 'active' 
+                      type.active 
                         ? 'bg-green-100 text-green-700' 
                         : 'bg-red-100 text-red-700'
                     }`}>
-                      {type.status === 'active' ? 'Active' : 'Inactive'}
+                      {type.active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
                       <Calendar className="w-3 h-3" />
-                      {new Date(type.dateCreated).toLocaleDateString()}
+                      {new Date(type.created_at).toLocaleDateString()}
                     </div>
                   </td>
                   <td className="px-4 py-2.5 text-right">
@@ -226,14 +231,15 @@ export default function EventTypes() {
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleToggleStatus(type.id)}
+                        onClick={() => handleToggleStatus(type)}
+                        disabled={actionLoading}
                         className={`p-2 rounded-lg transition-colors ${
-                          type.status === 'active'
+                          type.active
                             ? 'text-gray-400 hover:text-red-600 hover:bg-red-50'
                             : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
                         }`}
                       >
-                        {type.status === 'active' ? (
+                        {type.active ? (
                           <ToggleRight className="w-4 h-4" />
                         ) : (
                           <ToggleLeft className="w-4 h-4" />
@@ -247,7 +253,22 @@ export default function EventTypes() {
           </table>
         </div>
 
-        {filteredEventTypes.length === 0 && (
+        {loading && (
+          <div className="p-8 text-center">
+            <Loader className="w-8 h-8 text-primary-500 mx-auto mb-3 animate-spin" />
+            <p className="text-xs text-gray-500">Loading event types...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="p-8 text-center">
+            <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-3" />
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">Error</h3>
+            <p className="text-xs text-gray-500">{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && filteredEventTypes.length === 0 && (
           <div className="p-8 text-center">
             <CalendarCheck className="w-8 h-8 text-gray-300 mx-auto mb-3" />
             <h3 className="text-sm font-semibold text-gray-900 mb-1">No event types found</h3>
@@ -321,9 +342,14 @@ export default function EventTypes() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-semibold py-2 rounded-lg transition-all"
+                  disabled={actionLoading}
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-semibold py-2 rounded-lg transition-all disabled:from-gray-400 disabled:via-gray-400"
                 >
-                  <Save className="w-3.5 h-3.5" />
+                  {actionLoading ? (
+                    <Loader className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5" />
+                  )}
                   {editingType ? 'Save Changes' : 'Create'}
                 </button>
               </div>

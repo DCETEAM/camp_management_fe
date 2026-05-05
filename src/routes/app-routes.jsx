@@ -22,6 +22,7 @@ import CampReport from '../features/organizer/pages/CampReport'
 import MediaGallery from '../features/organizer/pages/MediaGallery'
 import MyQueue from '../features/staff/pages/MyQueue'
 import StepForm from '../features/staff/pages/StepForm'
+import KioskRegistration from '../features/kiosk/pages/KioskRegistration'
 
 export default function AppRoutes() {
 	return (
@@ -158,6 +159,9 @@ export default function AppRoutes() {
             <StepForm />
           </MainLayout>
         } />
+
+        {/* Kiosk Registration (no layout) */}
+        <Route path="/kiosk" element={<KioskRegistration />} />
 
 			</Routes>
 		</Router>
