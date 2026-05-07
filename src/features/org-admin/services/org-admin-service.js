@@ -17,6 +17,11 @@ const orgAdminService = {
 		return response.data
 	},
 
+	getAllowedEventTypes: async (orgId) => {
+		const response = await api.get(`/organizations/${orgId}/allowed-event-types`)
+		return response.data
+	},
+
 	// Camps
 	getCamps: async (params = {}) => {
 		const response = await api.get('/camps', { params })

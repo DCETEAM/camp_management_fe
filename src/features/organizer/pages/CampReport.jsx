@@ -1,42 +1,66 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft,
-  Users,
-  CheckCircle2,
-  BarChart3,
-  Download,
-  PieChart,
+  ArrowLeft, Users, CheckCircle2, BarChart3, Download, PieChart, Loader, AlertCircle, RefreshCw
 } from 'lucide-react'
+import api from '../../../core/interceptors/axiosInterceptor'
 
 export default function CampReport() {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  const [report] = useState({
-    total_participants: 210,
-    completion_rate: 69,
-    gender_breakdown: { Male: 118, Female: 85, Other: 7 },
-    age_groups: { '0-18': 18, '19-40': 62, '41-60': 88, '60+': 42 },
-    step_outcomes: [
-      {
-        step_name: 'Vision Test',
-        outcomes: { Normal: 120, 'Mild Issue': 45, Referred: 15 },
-      },
-      {
-        step_name: 'Doctor Checkup',
-        outcomes: { Normal: 95, Cataract: 38, Glaucoma: 12, Referred: 10 },
-      },
-      {
-        step_name: 'Pharmacy',
-        outcomes: { Treated: 130, 'No action': 15 },
-      },
-    ],
-  })
+  const [report, setReport]     = useState(null)
+  const [loading, setLoading]   = useState(true)
+  const [error, setError]       = useState(null)
+  const [exporting, setExporting] = useState(false)
 
-  const handleExport = () => {
-    alert('CSV export will be available when the backend is connected.')
+  const load = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const res = await api.get(`/camps/${id}/report`)
+      setReport(res.data)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load report.')
+    } finally {
+      setLoading(false)
+    }
+  }, [id])
+
+  useEffect(() => { load() }, [load])
+
+  const handleExport = async () => {
+    try {
+      setExporting(true)
+      const res = await api.get(`/camps/${id}/report/export`, { responseType: 'blob' })
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `camp_${id}_report.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      alert('Export failed.')
+    } finally {
+      setExporting(false)
+    }
   }
+
+  if (loading) return (
+    <div className="flex items-center justify-center py-20 gap-2 text-xs text-gray-400">
+      <Loader className="w-5 h-5 animate-spin" /> Loading report…
+    </div>
+  )
+
+  if (error) return (
+    <div className="flex flex-col items-center justify-center py-20 gap-3">
+      <AlertCircle className="w-8 h-8 text-red-400" />
+      <p className="text-sm text-red-600">{error}</p>
+      <button onClick={load} className="flex items-center gap-1.5 text-xs text-primary-600 hover:underline">
+        <RefreshCw className="w-3.5 h-3.5" /> Retry
+      </button>
+    </div>
+  )
 
   const genderColors = {
     Male: { bg: 'bg-blue-100', text: 'text-blue-700', bar: 'bg-blue-500' },
@@ -55,7 +79,7 @@ export default function CampReport() {
   const completionRate = report?.completion_rate || 0
   const genderBreakdown = report?.gender_breakdown || {}
   const ageGroups = report?.age_groups || {}
-  const stepOutcomes = report?.step_outcomes || []
+  const stepOutcomes = report?.per_step_outcomes || []
   const maxGenderCount = Math.max(...Object.values(genderBreakdown).map(Number), 1)
   const ageGroupEntries = Object.entries(ageGroups)
   const maxAgeCount = Math.max(...Object.values(ageGroups).map(Number), 1)
@@ -66,7 +90,7 @@ export default function CampReport() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate(`/camp-dashboard/${id}`)}
+            onClick={() => navigate(-1)}
             className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-4 h-4 text-gray-500" />
@@ -78,10 +102,11 @@ export default function CampReport() {
         </div>
         <button
           onClick={handleExport}
-          className="flex items-center gap-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-semibold py-2 px-4 rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md hover:shadow-lg"
+          disabled={exporting}
+          className="flex items-center gap-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-semibold py-2 px-4 rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md hover:shadow-lg disabled:opacity-60"
         >
-          <Download className="w-3.5 h-3.5" />
-          Export to CSV
+          {exporting ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+          {exporting ? 'Exporting…' : 'Export to CSV'}
         </button>
       </div>
 

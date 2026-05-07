@@ -23,7 +23,7 @@ kioskApi.interceptors.request.use(
 
 const kioskService = {
 	registerParticipant: async (data) => {
-		const response = await kioskApi.post('/participants', data)
+		const response = await kioskApi.post('/kiosk/participants', data)
 		return response.data
 	},
 

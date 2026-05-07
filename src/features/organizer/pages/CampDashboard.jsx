@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
   Users,
   CheckCircle2,
-  Clock,
   Activity,
   MapPin,
   Calendar,
@@ -12,6 +11,7 @@ import {
   BarChart3,
   Loader,
   AlertCircle
+
 } from 'lucide-react'
 import organizerService from '../services/organizer-service'
 
@@ -97,12 +97,6 @@ export default function CampDashboard() {
       icon: Activity,
       color: 'yellow',
     },
-    {
-      label: 'Not Started',
-      value: summary?.not_started || 0,
-      icon: Clock,
-      color: 'gray',
-    },
   ]
 
   const colorMap = {
@@ -141,7 +135,7 @@ export default function CampDashboard() {
           {camp?.event_type && (
             <div className="flex items-center gap-1">
               <ListChecks className="w-3.5 h-3.5" />
-              {camp.event_type}
+              {typeof camp.event_type === 'object' ? camp.event_type.name : camp.event_type}
             </div>
           )}
         </div>
@@ -217,20 +211,25 @@ export default function CampDashboard() {
           <h2 className="font-poppins text-sm font-bold text-gray-900 mb-3">Staff on Duty</h2>
           {Array.isArray(staff) && staff.length > 0 ? (
             <div className="space-y-2">
-              {staff.map((member, index) => (
-                <div key={member.id || index} className="flex items-center gap-2 text-xs py-2 bg-gray-50 rounded-lg">
-                  <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-500 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
-                    {(member.name || 'U').charAt(0).toUpperCase()}
+              {staff.map((member, index) => {
+                const name = member.user?.name || member.name || 'Unknown'
+                const stepName = member.step_template?.step_name || member.step_name || member.step || '—'
+                const role = member.user?.role || member.role || 'staff'
+                return (
+                  <div key={member.id || index} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
+                    <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-500 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                      {name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-gray-800 truncate">{name}</p>
+                      <p className="text-[11px] text-gray-500 truncate">{stepName}</p>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600 flex-shrink-0 capitalize">
+                      {role.replace(/_/g, ' ')}
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-gray-800 truncate">{member.name}</p>
-                    <p className="text-[11px] text-gray-500 truncate">{member.step_name || member.step || 'Unassigned'}</p>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-200 text-gray-600 flex-shrink-0">
-                    {member.role || 'staff'}
-                  </span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <p className="text-gray-400 text-xs">No staff assigned yet.</p>

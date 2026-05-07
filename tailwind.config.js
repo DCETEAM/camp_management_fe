@@ -36,6 +36,9 @@ export default {
           900: '#0c4a6e',
         },
       },
+      zIndex: {
+        60: '60',
+      },
       boxShadow: {
         'custom': '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         'custom-lg': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',

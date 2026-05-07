@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { 
   Search, 
   Plus, 
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import orgAdminService from '../services/org-admin-service'
+import CreateCampModal from '../components/CreateCampModal'
 
 export default function CampsList() {
   const navigate = useNavigate()
@@ -23,18 +24,14 @@ export default function CampsList() {
   const [camps, setCamps] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [createOpen, setCreateOpen] = useState(false)
 
-  useEffect(() => {
-    fetchCamps()
-  }, [searchQuery, statusFilter])
-
-  const fetchCamps = async () => {
+  const fetchCamps = useCallback(async () => {
     try {
       setLoading(true)
       const params = {}
       if (statusFilter !== 'all') params.status = statusFilter
       if (searchQuery) params.search = searchQuery
-      
       const data = await orgAdminService.getCamps(params)
       setCamps(data.data || data)
       setError(null)
@@ -43,7 +40,9 @@ export default function CampsList() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [searchQuery, statusFilter])
+
+  useEffect(() => { fetchCamps() }, [fetchCamps])
 
   const filteredCamps = camps
 
@@ -76,8 +75,8 @@ export default function CampsList() {
           <h1 className="font-poppins text-lg font-bold text-gray-900">Camps</h1>
           <p className="text-xs text-gray-500">Manage and monitor your camps</p>
         </div>
-        <button 
-          onClick={() => navigate('/org-dashboard/camps/create')}
+        <button
+          onClick={() => setCreateOpen(true)}
           className="flex items-center gap-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-semibold py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg"
         >
           <Plus className="w-3.5 h-3.5" />
@@ -210,6 +209,12 @@ export default function CampsList() {
           </div>
         )}
       </div>
+      {createOpen && (
+        <CreateCampModal
+          onClose={() => setCreateOpen(false)}
+          onCreated={() => { setCreateOpen(false); fetchCamps() }}
+        />
+      )}
     </div>
   )
 }

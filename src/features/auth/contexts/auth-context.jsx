@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import authService from '../services/auth-service'
+import api from '../../../core/interceptors/axiosInterceptor'
 
 const AuthContext = createContext()
 
@@ -10,15 +11,17 @@ export function AuthProvider({ children }) {
 
 	useEffect(() => {
 		const initAuth = async () => {
-			const storedUser = localStorage.getItem('user')
-			if (storedUser) {
-				try {
-					setUser(JSON.parse(storedUser))
-					setIsAuthenticated(true)
-				} catch (error) {
-					console.error('Failed to parse stored user:', error)
-					localStorage.removeItem('user')
-				}
+			const token = localStorage.getItem('access_token')
+			if (!token) { setLoading(false); return }
+			try {
+				const response = await api.get('/auth/me')
+				const freshUser = response.data?.user ?? response.data
+				setUser(freshUser)
+				setIsAuthenticated(true)
+				localStorage.setItem('user', JSON.stringify(freshUser))
+			} catch {
+				localStorage.removeItem('access_token')
+				localStorage.removeItem('user')
 			}
 			setLoading(false)
 		}
@@ -37,6 +40,7 @@ export function AuthProvider({ children }) {
 		setUser(null)
 		setIsAuthenticated(false)
 		authService.logout()
+		window.location.href = '/login'
 	}
 
 	return (
