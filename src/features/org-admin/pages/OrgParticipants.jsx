@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Search, Users, Filter, Loader, AlertCircle, RefreshCw, ChevronRight, Tent } from 'lucide-react'
-import { useAuth } from '../../auth/contexts/auth-context'
+import { useAuth } from '../../auth/contexts/AuthContext'
+import DateRangeFilter from '../../../common/components/DateRangeFilter'
 import api from '../../../core/interceptors/axiosInterceptor'
 
 const statusBadge = (s) => ({
@@ -22,6 +23,8 @@ export default function OrgParticipants() {
   const [statusFilter, setStatusFilter] = useState('')
   const [campFilter, setCampFilter]     = useState('')
   const [page, setPage]                 = useState(1)
+  const [startDate, setStartDate]       = useState('')
+  const [endDate, setEndDate]           = useState('')
 
   const load = useCallback(async (pg = 1) => {
     if (!user?.org_id) return
@@ -32,6 +35,8 @@ export default function OrgParticipants() {
           search: search || undefined,
           status: statusFilter || undefined,
           camp_id: campFilter || undefined,
+          start_date: startDate || undefined,
+          end_date: endDate || undefined,
           page: pg,
         }
       })
@@ -51,7 +56,7 @@ export default function OrgParticipants() {
       .catch(() => {})
   }, [user])
 
-  useEffect(() => { load(1); setPage(1) }, [user, search, statusFilter, campFilter])
+  useEffect(() => { load(1); setPage(1) }, [user, search, statusFilter, campFilter, startDate, endDate])
 
   if (error) return (
     <div className="flex flex-col items-center justify-center py-20 gap-2">
@@ -96,6 +101,13 @@ export default function OrgParticipants() {
               <option value="completed">Completed</option>
             </select>
           </div>
+          <DateRangeFilter
+            startDate={startDate}
+            endDate={endDate}
+            onStartChange={setStartDate}
+            onEndChange={setEndDate}
+            onClear={() => { setStartDate(''); setEndDate('') }}
+          />
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import DateRangeFilter from '../../../common/components/DateRangeFilter'
 import { Calendar, MapPin, ListChecks, Loader, AlertCircle, ChevronRight } from 'lucide-react'
 import api from '../../../core/interceptors/axiosInterceptor'
 
@@ -18,13 +19,16 @@ export default function MyCamps() {
   const [camps, setCamps]   = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError]   = useState(null)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate]     = useState('')
 
   useEffect(() => {
-    api.get('/camps/my')
+    setLoading(true)
+    api.get('/camps/my', { params: { start_date: startDate || undefined, end_date: endDate || undefined } })
       .then(r => setCamps(r.data))
       .catch(err => setError(err.response?.data?.message || 'Failed to load camps.'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [startDate, endDate])
 
   if (loading) return (
     <div className="flex items-center justify-center py-20 gap-2 text-xs text-gray-400">
@@ -41,9 +45,20 @@ export default function MyCamps() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="font-poppins text-lg font-bold text-gray-900">My Assigned Camps</h1>
-        <p className="text-xs text-gray-500 mt-0.5">Select a camp to open your workstation</p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+        <div>
+          <h1 className="font-poppins text-lg font-bold text-gray-900">My Assigned Camps</h1>
+          <p className="text-xs text-gray-500 mt-0.5">Select a camp to open your workstation</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <DateRangeFilter
+            startDate={startDate}
+            endDate={endDate}
+            onStartChange={setStartDate}
+            onEndChange={setEndDate}
+            onClear={() => { setStartDate(''); setEndDate('') }}
+          />
+        </div>
       </div>
 
       {camps.length === 0 ? (

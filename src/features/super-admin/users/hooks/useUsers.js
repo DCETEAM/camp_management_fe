@@ -12,14 +12,18 @@ export function useUsers() {
 	const [search, setSearch] = useState('')
 	const [roleFilter, setRoleFilter] = useState('all')
 	const [orgFilter, setOrgFilter] = useState('all')
+	const [startDate, setStartDate] = useState('')
+	const [endDate, setEndDate] = useState('')
 
-	const fetch = useCallback(async (currentPage, currentSearch, currentRole, currentOrg) => {
+	const fetch = useCallback(async (currentPage, currentSearch, currentRole, currentOrg, currentStart, currentEnd) => {
 		try {
 			setLoading(true)
 			const params = { page: currentPage, per_page: PER_PAGE }
 			if (currentSearch) params.search = currentSearch
 			if (currentRole !== 'all') params.role = currentRole
 			if (currentOrg !== 'all') params.org_id = currentOrg
+			if (currentStart) params.start_date = currentStart
+			if (currentEnd) params.end_date = currentEnd
 			const data = await userService.getUsers(params)
 			const list = data.data ?? data
 			setUsers(list)
@@ -34,10 +38,10 @@ export function useUsers() {
 		}
 	}, [])
 
-	useEffect(() => { setPage(1) }, [search, roleFilter, orgFilter])
-	useEffect(() => { fetch(page, search, roleFilter, orgFilter) }, [fetch, page, search, roleFilter, orgFilter])
+	useEffect(() => { setPage(1) }, [search, roleFilter, orgFilter, startDate, endDate])
+	useEffect(() => { fetch(page, search, roleFilter, orgFilter, startDate, endDate) }, [fetch, page, search, roleFilter, orgFilter, startDate, endDate])
 
-	const refetch = useCallback(() => fetch(page, search, roleFilter, orgFilter), [fetch, page, search, roleFilter, orgFilter])
+	const refetch = useCallback(() => fetch(page, search, roleFilter, orgFilter, startDate, endDate), [fetch, page, search, roleFilter, orgFilter, startDate, endDate])
 
-	return { users, meta, loading, error, page, setPage, search, setSearch, roleFilter, setRoleFilter, orgFilter, setOrgFilter, refetch, perPage: PER_PAGE }
+	return { users, meta, loading, error, page, setPage, search, setSearch, roleFilter, setRoleFilter, orgFilter, setOrgFilter, startDate, setStartDate, endDate, setEndDate, refetch, perPage: PER_PAGE }
 }

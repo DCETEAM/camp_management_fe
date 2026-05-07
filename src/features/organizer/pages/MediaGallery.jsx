@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { Search, Filter, Image as ImageIcon, FileText, Download, Eye, X, Calendar, User, Tag, ListChecks, Loader, AlertCircle, RefreshCw } from 'lucide-react'
 import organizerService from '../services/organizer-service'
+import DateRangeFilter from '../../../common/components/DateRangeFilter'
 import api from '../../../core/interceptors/axiosInterceptor'
 import AuthImage from '../../../common/components/AuthImage'
 
@@ -18,6 +19,8 @@ export default function MediaGallery() {
   const [stepFilter, setStepFilter] = useState('')
   const [previewFile, setPreviewFile] = useState(null)
   const [meta, setMeta]             = useState(null)
+  const [startDate, setStartDate]   = useState('')
+  const [endDate, setEndDate]       = useState('')
 
   const load = useCallback(async () => {
     try {
@@ -26,6 +29,8 @@ export default function MediaGallery() {
         api.get(`/camps/${id}/media`, {
           params: {
             step_template_id: stepFilter || undefined,
+            start_date: startDate || undefined,
+            end_date: endDate || undefined,
           }
         }),
         organizerService.getStepStats(id),
@@ -39,7 +44,7 @@ export default function MediaGallery() {
     } finally {
       setLoading(false)
     }
-  }, [id, stepFilter])
+  }, [id, stepFilter, startDate, endDate])
 
   useEffect(() => { load() }, [load])
 
@@ -143,6 +148,13 @@ export default function MediaGallery() {
                 ))}
               </select>
             </div>
+            <DateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartChange={setStartDate}
+              onEndChange={setEndDate}
+              onClear={() => { setStartDate(''); setEndDate('') }}
+            />
           </div>
         </div>
 

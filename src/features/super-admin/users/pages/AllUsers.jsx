@@ -9,6 +9,7 @@ import userService from '../services/user-service'
 import UserEditModal from '../components/UserEditModal'
 import InviteUserModal from '../components/InviteUserModal'
 import organizationService from '../../organizations/services/organization-service'
+import DateRangeFilter from '../../../../common/components/DateRangeFilter'
 
 const getRoleBadgeClass = (role) => {
   switch (role) {
@@ -24,7 +25,7 @@ const formatRoleName = (role) =>
   role.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 
 export default function AllUsers() {
-  const { users, meta, loading, error, page, setPage, search, setSearch, roleFilter, setRoleFilter, orgFilter, setOrgFilter, refetch, perPage } = useUsers()
+  const { users, meta, loading, error, page, setPage, search, setSearch, roleFilter, setRoleFilter, orgFilter, setOrgFilter, startDate, setStartDate, endDate, setEndDate, refetch, perPage } = useUsers()
   const [organizations, setOrganizations] = useState([])
 
   useEffect(() => {
@@ -117,6 +118,13 @@ export default function AllUsers() {
               <option value="all">All Organizations</option>
               {organizations.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
             </select>
+            <DateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartChange={setStartDate}
+              onEndChange={setEndDate}
+              onClear={() => { setStartDate(''); setEndDate('') }}
+            />
           </div>
         </div>
 

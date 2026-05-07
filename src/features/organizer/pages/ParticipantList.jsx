@@ -6,6 +6,7 @@ import {
   Activity, User, FileText, Image, Download, Clock
 } from 'lucide-react'
 import organizerService from '../services/organizer-service'
+import DateRangeFilter from '../../../common/components/DateRangeFilter'
 import AuthImage from '../../../common/components/AuthImage'
 
 const outcomeBadge = (o) => ({
@@ -252,6 +253,8 @@ export default function ParticipantList() {
   const [page, setPage]                 = useState(1)
   const [meta, setMeta]                 = useState(null)
   const [selectedId, setSelectedId]     = useState(null)
+  const [startDate, setStartDate]       = useState('')
+  const [endDate, setEndDate]           = useState('')
 
   const load = useCallback(async (pg = 1) => {
     try {
@@ -261,6 +264,8 @@ export default function ParticipantList() {
           search: search || undefined,
           status: statusFilter || undefined,
           step_template_id: stepFilter || undefined,
+          start_date: startDate || undefined,
+          end_date: endDate || undefined,
           page: pg,
         }),
         organizerService.getStepStats(id),
@@ -273,9 +278,9 @@ export default function ParticipantList() {
     } finally {
       setLoading(false)
     }
-  }, [id, search, statusFilter, stepFilter])
+  }, [id, search, statusFilter, stepFilter, startDate, endDate])
 
-  useEffect(() => { load(1); setPage(1) }, [id, search, statusFilter, stepFilter])
+  useEffect(() => { load(1); setPage(1) }, [id, search, statusFilter, stepFilter, startDate, endDate])
 
   const filtered = participants
 
@@ -351,6 +356,13 @@ export default function ParticipantList() {
               <option value="completed">Completed</option>
             </select>
           </div>
+          <DateRangeFilter
+            startDate={startDate}
+            endDate={endDate}
+            onStartChange={setStartDate}
+            onEndChange={setEndDate}
+            onClear={() => { setStartDate(''); setEndDate('') }}
+          />
         </div>
       </div>
 

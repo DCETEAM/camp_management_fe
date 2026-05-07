@@ -8,9 +8,10 @@ import { useEventTypes } from '../hooks/useEventTypes'
 import EventTypeFormModal from '../components/EventTypeFormModal'
 import ConfirmDialog from '../components/ConfirmDialog'
 import eventTypeService from '../services/event-type-service'
+import DateRangeFilter from '../../../../common/components/DateRangeFilter'
 
 export default function EventTypes() {
-  const { eventTypes, meta, loading, error, page, setPage, search, setSearch, refetch, perPage } = useEventTypes()
+  const { eventTypes, meta, loading, error, page, setPage, search, setSearch, startDate, setStartDate, endDate, setEndDate, refetch, perPage } = useEventTypes()
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingType, setEditingType] = useState(null)
@@ -121,14 +122,23 @@ export default function EventTypes() {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="p-3 border-b border-gray-100">
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search event types..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search event types..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+              />
+            </div>
+            <DateRangeFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartChange={setStartDate}
+              onEndChange={setEndDate}
+              onClear={() => { setStartDate(''); setEndDate('') }}
             />
           </div>
         </div>

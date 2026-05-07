@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Search, Image, FileText, Download, Loader, AlertCircle, RefreshCw, X } from 'lucide-react'
 import AuthImage from '../../../common/components/AuthImage'
-import { useAuth } from '../../auth/contexts/auth-context'
+import { useAuth } from '../../auth/contexts/AuthContext'
+import DateRangeFilter from '../../../common/components/DateRangeFilter'
 import api from '../../../core/interceptors/axiosInterceptor'
 
 export default function OrgMedia() {
@@ -15,13 +16,21 @@ export default function OrgMedia() {
   const [campFilter, setCampFilter] = useState('')
   const [page, setPage]           = useState(1)
   const [preview, setPreview]     = useState(null)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate]     = useState('')
 
   const load = useCallback(async (pg = 1) => {
     if (!user?.org_id) return
     try {
       setLoading(true)
       const res = await api.get(`/organizations/${user.org_id}/media`, {
-        params: { search: search || undefined, camp_id: campFilter || undefined, page: pg }
+        params: {
+          search: search || undefined,
+          camp_id: campFilter || undefined,
+          start_date: startDate || undefined,
+          end_date: endDate || undefined,
+          page: pg,
+        }
       })
       setFiles(res.data.data ?? res.data)
       setMeta(res.data.meta ?? null)
@@ -30,7 +39,7 @@ export default function OrgMedia() {
     } finally {
       setLoading(false)
     }
-  }, [user, search, campFilter])
+  }, [user, search, campFilter, startDate, endDate])
 
   useEffect(() => {
     if (!user?.org_id) return
@@ -39,7 +48,7 @@ export default function OrgMedia() {
       .catch(() => {})
   }, [user])
 
-  useEffect(() => { load(1); setPage(1) }, [user, search, campFilter])
+  useEffect(() => { load(1); setPage(1) }, [user, search, campFilter, startDate, endDate])
 
   const images = files.filter(f => f.mime_type?.startsWith('image/')).length
   const docs   = files.length - images
@@ -115,6 +124,13 @@ export default function OrgMedia() {
           <option value="">All Camps</option>
           {camps.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
+        <DateRangeFilter
+          startDate={startDate}
+          endDate={endDate}
+          onStartChange={setStartDate}
+          onEndChange={setEndDate}
+          onClear={() => { setStartDate(''); setEndDate('') }}
+        />
       </div>
 
       {/* Grid */}

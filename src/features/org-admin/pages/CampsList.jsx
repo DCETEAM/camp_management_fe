@@ -16,11 +16,14 @@ import {
 import { useNavigate } from 'react-router-dom'
 import orgAdminService from '../services/org-admin-service'
 import CreateCampModal from '../components/CreateCampModal'
+import DateRangeFilter from '../../../common/components/DateRangeFilter'
 
 export default function CampsList() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [camps, setCamps] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -32,6 +35,8 @@ export default function CampsList() {
       const params = {}
       if (statusFilter !== 'all') params.status = statusFilter
       if (searchQuery) params.search = searchQuery
+      if (startDate) params.start_date = startDate
+      if (endDate) params.end_date = endDate
       const data = await orgAdminService.getCamps(params)
       setCamps(data.data || data)
       setError(null)
@@ -40,7 +45,7 @@ export default function CampsList() {
     } finally {
       setLoading(false)
     }
-  }, [searchQuery, statusFilter])
+  }, [searchQuery, statusFilter, startDate, endDate])
 
   useEffect(() => { fetchCamps() }, [fetchCamps])
 
@@ -144,6 +149,13 @@ export default function CampsList() {
                 <option value="active">Active</option>
                 <option value="closed">Closed</option>
               </select>
+              <DateRangeFilter
+                startDate={startDate}
+                endDate={endDate}
+                onStartChange={setStartDate}
+                onEndChange={setEndDate}
+                onClear={() => { setStartDate(''); setEndDate('') }}
+              />
             </div>
           </div>
         </div>

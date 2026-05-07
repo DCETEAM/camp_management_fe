@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import DateRangeFilter from '../../../common/components/DateRangeFilter'
 import { Loader, AlertCircle, RefreshCw, BarChart3, ChevronRight, MapPin, Calendar } from 'lucide-react'
 import { useAuth } from '../../auth/contexts/auth-context'
 import api from '../../../core/interceptors/axiosInterceptor'
@@ -18,17 +19,24 @@ export default function OrgReport() {
   const [rows, setRows]       = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(null)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate]     = useState('')
 
   const load = () => {
     if (!user?.org_id) return
     setLoading(true)
-    api.get(`/organizations/${user.org_id}/report`)
+    api.get(`/organizations/${user.org_id}/report`, {
+      params: {
+        start_date: startDate || undefined,
+        end_date: endDate || undefined,
+      }
+    })
       .then(r => setRows(r.data))
       .catch(e => setError(e.response?.data?.message || 'Failed to load'))
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { load() }, [user])
+  useEffect(() => { load() }, [user, startDate, endDate])
 
   const totals = rows.reduce((acc, r) => ({
     total:       acc.total + r.total,
@@ -56,9 +64,18 @@ export default function OrgReport() {
           <h1 className="font-poppins text-lg font-bold text-gray-900">Organization Report</h1>
           <p className="text-xs text-gray-500">{rows.length} camp{rows.length !== 1 ? 's' : ''}</p>
         </div>
-        <button onClick={load} disabled={loading} className="p-2 hover:bg-gray-100 rounded-lg">
-          <RefreshCw className={`w-4 h-4 text-gray-400 ${loading ? 'animate-spin' : ''}`} />
-        </button>
+        <div className="flex items-center gap-2">
+          <DateRangeFilter
+            startDate={startDate}
+            endDate={endDate}
+            onStartChange={setStartDate}
+            onEndChange={setEndDate}
+            onClear={() => { setStartDate(''); setEndDate('') }}
+          />
+          <button onClick={load} disabled={loading} className="p-2 hover:bg-gray-100 rounded-lg">
+            <RefreshCw className={`w-4 h-4 text-gray-400 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Totals */}

@@ -10,15 +10,17 @@ export function useOrganizations() {
 	const [error, setError] = useState(null)
 	const [page, setPage] = useState(1)
 	const [search, setSearch] = useState('')
+	const [startDate, setStartDate] = useState('')
+	const [endDate, setEndDate] = useState('')
 
-	const fetch = useCallback(async (currentPage, currentSearch) => {
+	const fetch = useCallback(async (currentPage, currentSearch, currentStart, currentEnd) => {
 		try {
 			setLoading(true)
-			const data = await organizationService.getOrganizations({
-				page: currentPage,
-				per_page: PER_PAGE,
-				search: currentSearch || undefined,
-			})
+			const params = { page: currentPage, per_page: PER_PAGE }
+			if (currentSearch) params.search = currentSearch
+			if (currentStart) params.start_date = currentStart
+			if (currentEnd) params.end_date = currentEnd
+			const data = await organizationService.getOrganizations(params)
 			const list = data.data ?? data
 			setOrganizations(list)
 			if (data.total !== undefined) {
@@ -32,10 +34,10 @@ export function useOrganizations() {
 		}
 	}, [])
 
-	useEffect(() => { setPage(1) }, [search])
-	useEffect(() => { fetch(page, search) }, [fetch, page, search])
+	useEffect(() => { setPage(1) }, [search, startDate, endDate])
+	useEffect(() => { fetch(page, search, startDate, endDate) }, [fetch, page, search, startDate, endDate])
 
-	const refetch = useCallback(() => fetch(page, search), [fetch, page, search])
+	const refetch = useCallback(() => fetch(page, search, startDate, endDate), [fetch, page, search, startDate, endDate])
 
-	return { organizations, meta, loading, error, page, setPage, search, setSearch, refetch, perPage: PER_PAGE }
+	return { organizations, meta, loading, error, page, setPage, search, setSearch, startDate, setStartDate, endDate, setEndDate, refetch, perPage: PER_PAGE }
 }
