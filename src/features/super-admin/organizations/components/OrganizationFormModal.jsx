@@ -2,16 +2,19 @@ import { useState } from 'react'
 import { X, Save, Loader } from 'lucide-react'
 import { validateOrgForm, hasErrors } from '../../../../common/utils/validation'
 
-const inputBase = 'w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all'
+const inputBase = 'w-full px-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all'
 const inputError = 'border-red-400 bg-red-50'
 const inputNormal = 'border-gray-200'
 
-function Field({ label, error, children }) {
+function Field({ label, error, children, required = false }) {
 	return (
-		<div>
-			<label className="block text-xs font-semibold text-gray-700 mb-1">{label}</label>
+		<div className="space-y-1.5">
+			<label className="block text-xs font-semibold text-gray-700">
+				{label}
+				{!required && <span className="text-gray-400 font-normal"> (Optional)</span>}
+			</label>
 			{children}
-			{error && <p className="mt-1 text-[10px] text-red-600">{error}</p>}
+			{error && <p className="text-[11px] text-red-600">{error}</p>}
 		</div>
 	)
 }
@@ -30,8 +33,8 @@ export default function OrganizationFormModal({ editingOrg, formData, setFormDat
 	}
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50">
-			<div className="bg-white rounded-t-2xl sm:rounded-xl shadow-2xl w-full sm:max-w-lg max-h-[92vh] flex flex-col">
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 overflow-y-auto">
+			<div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col my-auto">
 				<div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100 flex-shrink-0">
 					<h2 className="font-poppins text-sm font-bold text-gray-900">
 						{editingOrg ? 'Edit Organization' : 'Create Organization'}
@@ -41,8 +44,8 @@ export default function OrganizationFormModal({ editingOrg, formData, setFormDat
 					</button>
 				</div>
 
-				<form onSubmit={handleSubmit} className="px-4 py-4 space-y-3 overflow-y-auto flex-1">
-					<Field label="Organization Name *" error={touched.name && errors.name}>
+					<form onSubmit={handleSubmit} className="px-4 py-4 space-y-4 overflow-y-auto flex-1">
+					<Field label="Organization Name" required error={touched.name && errors.name}>
 						<input
 							type="text"
 							value={formData.name}
@@ -53,7 +56,7 @@ export default function OrganizationFormModal({ editingOrg, formData, setFormDat
 						/>
 					</Field>
 
-					<Field label="Type *" error={touched.type && errors.type}>
+					<Field label="Type" required error={touched.type && errors.type}>
 						<input
 							type="text"
 							value={formData.type}
@@ -64,7 +67,7 @@ export default function OrganizationFormModal({ editingOrg, formData, setFormDat
 						/>
 					</Field>
 
-					<Field label="Email *" error={touched.email && errors.email}>
+					<Field label="Email" required error={touched.email && errors.email}>
 						<input
 							type="text"
 							value={formData.email}
@@ -75,7 +78,7 @@ export default function OrganizationFormModal({ editingOrg, formData, setFormDat
 						/>
 					</Field>
 
-					<Field label="Phone (Optional)" error={touched.phone && errors.phone}>
+					<Field label="Phone" error={touched.phone && errors.phone}>
 						<input
 							type="tel"
 							value={formData.phone}
@@ -86,12 +89,12 @@ export default function OrganizationFormModal({ editingOrg, formData, setFormDat
 						/>
 					</Field>
 
-					<div>
-						<label className="block text-xs font-semibold text-gray-700 mb-1">Address (Optional)</label>
+					<div className="space-y-1.5">
+						<label className="block text-xs font-semibold text-gray-700">Address <span className="text-gray-400 font-normal">(Optional)</span></label>
 						<textarea
 							value={formData.address}
 							onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-							rows={2}
+							rows={3}
 							className={`${inputBase} resize-none`}
 							placeholder="Enter address"
 						/>
@@ -106,12 +109,14 @@ export default function OrganizationFormModal({ editingOrg, formData, setFormDat
 					</label>
 				</form>
 
-				<div className="flex gap-2 px-4 py-3.5 border-t border-gray-100 flex-shrink-0">
-					<button type="button" onClick={onClose} className="flex-1 px-3 py-2 text-xs border border-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
-					<button onClick={handleSubmit} disabled={actionLoading} className="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-semibold py-2 rounded-lg transition-all disabled:from-gray-400 disabled:to-gray-400">
-						{actionLoading ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-						{editingOrg ? 'Save Changes' : 'Create'}
-					</button>
+				<div className="flex-shrink-0 border-t border-gray-100 px-4 py-4">
+					<div className="flex gap-3">
+						<button type="button" onClick={onClose} className="flex-1 px-4 py-3 text-sm border border-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+						<button onClick={handleSubmit} disabled={actionLoading} className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-sm font-semibold py-3 rounded-lg transition-all disabled:from-gray-400 disabled:to-gray-400">
+							{actionLoading ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+							{editingOrg ? 'Save Changes' : 'Create'}
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>

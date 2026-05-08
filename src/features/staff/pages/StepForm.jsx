@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Save, Upload, FileText, User, CheckCircle2, Clock, X, Loader, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Save, Upload, FileText, User, CheckCircle2, Clock, X, Loader, AlertCircle, Phone } from 'lucide-react'
 import api from '../../../core/interceptors/axiosInterceptor'
 
 export default function StepForm() {
@@ -407,8 +407,66 @@ export default function StepForm() {
             </div>
 
             <div className="p-4 space-y-4">
+              {/* Mandatory Participant Info - Read Only */}
+              <div className="pb-4 border-b border-gray-100">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Participant Information (Required)</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      <span className="flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5" />
+                        Full Name <span className="text-red-500">*</span>
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      value={participant?.name || ''}
+                      disabled
+                      className="w-full px-3 py-3 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      <span className="flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5" />
+                        Phone <span className="text-red-500">*</span>
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      value={participant?.phone || 'N/A'}
+                      disabled
+                      className="w-full px-3 py-3 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Age <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={participant?.age ? `${participant.age} years` : ''}
+                      disabled
+                      className="w-full px-3 py-3 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Gender <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={participant?.gender || ''}
+                      disabled
+                      className="w-full px-3 py-3 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Custom Form Fields */}
               {formFields.length === 0 && (
-                <p className="text-xs text-gray-400 text-center py-2">No form fields configured for this step.</p>
+                <p className="text-xs text-gray-400 text-center py-2">No additional form fields configured for this step.</p>
               )}
               {formFields.map((field) => (
                 <div key={field.key} data-field-error={fieldErrors[field.key] ? true : undefined}>

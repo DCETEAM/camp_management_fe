@@ -384,8 +384,8 @@ export default function StepTemplateBuilder() {
       />
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50">
-          <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-2xl w-full sm:max-w-2xl max-h-[92vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col my-auto">
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100 flex-shrink-0">
               <h2 className="font-poppins text-sm font-bold text-gray-900">{editingStep ? 'Edit Step' : 'Add New Step'}</h2>
               <button onClick={closeModal} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"><X className="w-5 h-5 text-gray-500" /></button>
@@ -412,6 +412,31 @@ export default function StepTemplateBuilder() {
                       </span>
                     )}
                   </div>
+
+                  {/* Mandatory Participant Info Notice */}
+                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-[10px] font-semibold text-blue-800 mb-1.5">Participant Information (Always Required)</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex items-center gap-1.5 text-[11px] text-blue-700">
+                        <User className="w-3 h-3" />
+                        <span>Full Name *</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[11px] text-blue-700">
+                        <span className="w-3 h-3 flex items-center justify-center text-[8px] font-bold">#</span>
+                        <span>Age *</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[11px] text-blue-700">
+                        <span className="w-3 h-3 flex items-center justify-center text-[8px]">⚤</span>
+                        <span>Gender *</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[11px] text-blue-700">
+                        <span className="w-3 h-3 flex items-center justify-center text-[8px]">📞</span>
+                        <span>Phone *</span>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-blue-500 mt-1.5 italic">These fields are automatically included and cannot be edited.</p>
+                  </div>
+
                   {formData.formFields.length > 0 && (
                     <div className="space-y-1.5 mb-3">
                       {formData.formFields.map((field, idx) => (

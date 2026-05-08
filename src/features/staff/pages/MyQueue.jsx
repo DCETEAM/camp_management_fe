@@ -25,7 +25,7 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
         name: form.name,
         age: parseInt(form.age),
         gender: form.gender,
-        phone: form.phone || null,
+        phone: form.phone,
       })
       const participant = pRes.data
       await api.post('/step-responses', {
@@ -111,35 +111,68 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
         <div className="p-4 space-y-4">
           {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Full Name <span className="text-red-500">*</span></label>
-            <input value={form.name} onChange={e => handle('name', e.target.value)} required
-              className={inputCls} placeholder="Enter full name" autoComplete="off" />
+          {/* Full Name - Full Width */}
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-gray-700">
+              Full Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              value={form.name}
+              onChange={e => handle('name', e.target.value)}
+              required
+              className={inputCls}
+              placeholder="Enter full name"
+              autoComplete="off"
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Age <span className="text-red-500">*</span></label>
-              <input type="number" value={form.age} onChange={e => handle('age', e.target.value)} required min="0" max="130"
-                className={inputCls} placeholder="Age" inputMode="numeric" />
+          {/* Age | Gender | Phone - 3 Column Grid */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-semibold text-gray-700">
+                Age <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                value={form.age}
+                onChange={e => handle('age', e.target.value)}
+                required
+                min="0"
+                max="130"
+                className={inputCls}
+                placeholder="Age"
+                inputMode="numeric"
+              />
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Gender <span className="text-red-500">*</span></label>
-              <select value={form.gender} onChange={e => handle('gender', e.target.value)} required className={`${inputCls} bg-white`}>
+            <div className="space-y-1.5">
+              <label className="block text-sm font-semibold text-gray-700">
+                Gender <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={form.gender}
+                onChange={e => handle('gender', e.target.value)}
+                required
+                className={`${inputCls} bg-white`}
+              >
                 <option value="">Select</option>
                 <option>Male</option>
                 <option>Female</option>
                 <option>Other</option>
               </select>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Phone <span className="text-gray-400 font-normal text-xs">(optional)</span>
-            </label>
-            <input value={form.phone} onChange={e => handle('phone', e.target.value)}
-              className={inputCls} placeholder="Mobile number" inputMode="tel" />
+            <div className="space-y-1.5">
+              <label className="block text-sm font-semibold text-gray-700">
+                Phone <span className="text-red-500">*</span>
+              </label>
+              <input
+                value={form.phone}
+                onChange={e => handle('phone', e.target.value)}
+                required
+                className={inputCls}
+                placeholder="Mobile number"
+                inputMode="tel"
+              />
+            </div>
           </div>
 
           {/* Extra fields from step template */}
@@ -228,14 +261,9 @@ function ParticipantDetailModal({ participant, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={onClose}>
-      <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl shadow-2xl max-h-[90vh] flex flex-col"
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto" onClick={onClose}>
+      <div className="bg-white w-full max-w-md rounded-xl sm:rounded-2xl shadow-2xl max-h-[85vh] flex flex-col my-auto"
         onClick={e => e.stopPropagation()}>
-
-        {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-1 sm:hidden">
-          <div className="w-10 h-1 bg-gray-200 rounded-full" />
-        </div>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
@@ -354,12 +382,9 @@ function MyLogModal({ campId, stepTemplateId, stepName, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center" onClick={onClose}>
-      <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl shadow-2xl max-h-[90vh] flex flex-col"
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto" onClick={onClose}>
+      <div className="bg-white w-full max-w-md rounded-xl sm:rounded-2xl shadow-2xl max-h-[85vh] flex flex-col my-auto"
         onClick={e => e.stopPropagation()}>
-        <div className="flex justify-center pt-3 pb-1 sm:hidden">
-          <div className="w-10 h-1 bg-gray-200 rounded-full" />
-        </div>
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div>
             <p className="font-poppins text-sm font-bold text-gray-900">My Log</p>

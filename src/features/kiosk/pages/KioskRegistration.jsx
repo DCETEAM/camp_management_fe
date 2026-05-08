@@ -88,11 +88,12 @@ export default function KioskRegistration() {
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          {/* Full Name - Full Width */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
               <span className="flex items-center gap-2">
                 <User className="w-4 h-4" />
-                Full Name *
+                Full Name <span className="text-red-500">*</span>
               </span>
             </label>
             <input
@@ -100,14 +101,15 @@ export default function KioskRegistration() {
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+              className="w-full px-4 py-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
               placeholder="Enter your full name"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Age *</label>
+          {/* Age | Gender | Phone - 3 Column Grid */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Age <span className="text-red-500">*</span></label>
               <input
                 type="number"
                 required
@@ -115,34 +117,34 @@ export default function KioskRegistration() {
                 max="130"
                 value={formData.age}
                 onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                className="w-full px-4 py-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                 placeholder="Age"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Gender *</label>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Gender <span className="text-red-500">*</span></label>
               <select
                 required
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white"
+                className="w-full px-4 py-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white"
               >
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
               </select>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone (Optional)</label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
-              placeholder="Mobile number for follow-up"
-            />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Phone <span className="text-red-500">*</span></label>
+              <input
+                type="tel"
+                required
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full px-4 py-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                placeholder="Mobile number"
+              />
+            </div>
           </div>
 
           <button

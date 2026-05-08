@@ -9,16 +9,19 @@ const ROLE_OPTIONS = [
   { value: 'staff', label: 'Staff' },
 ]
 
-const inputBase = 'w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all'
+const inputBase = 'w-full px-3 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all'
 const inputError = 'border-red-400 bg-red-50'
 const inputNormal = 'border-gray-200'
 
-function Field({ label, error, children }) {
+function Field({ label, error, children, required = false }) {
   return (
-    <div>
-      <label className="block text-xs font-semibold text-gray-700 mb-1">{label}</label>
+    <div className="space-y-1.5">
+      <label className="block text-xs font-semibold text-gray-700">
+        {label}
+        {!required && <span className="text-gray-400 font-normal"> (Optional)</span>}
+      </label>
       {children}
-      {error && <p className="mt-1 text-[10px] text-red-600">{error}</p>}
+      {error && <p className="text-[11px] text-red-600">{error}</p>}
     </div>
   )
 }
@@ -67,8 +70,8 @@ export default function InviteUserModal({ onInvite, onClose, saving, saveError, 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/50">
-      <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-2xl w-full sm:max-w-md max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col my-auto">
         <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100 flex-shrink-0">
           <div>
             <h2 className="font-poppins text-sm font-bold text-gray-900">Add User</h2>
@@ -79,8 +82,8 @@ export default function InviteUserModal({ onInvite, onClose, saving, saveError, 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-4 py-4 space-y-3 overflow-y-auto flex-1">
-          <Field label="Full Name *" error={touched.name && errors.name}>
+        <form onSubmit={handleSubmit} className="px-4 py-4 space-y-4 overflow-y-auto flex-1">
+          <Field label="Full Name" required error={touched.name && errors.name}>
             <input
               type="text"
               value={formData.name}
@@ -91,7 +94,7 @@ export default function InviteUserModal({ onInvite, onClose, saving, saveError, 
             />
           </Field>
 
-          <Field label="Email *" error={touched.email && errors.email}>
+          <Field label="Email" required error={touched.email && errors.email}>
             <input
               type="text"
               value={formData.email}
@@ -102,8 +105,8 @@ export default function InviteUserModal({ onInvite, onClose, saving, saveError, 
             />
           </Field>
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Role *</label>
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-gray-700">Role <span className="text-red-500">*</span></label>
             <select
               value={formData.role}
               onChange={(e) => setFormData(p => ({ ...p, role: e.target.value }))}
@@ -117,7 +120,7 @@ export default function InviteUserModal({ onInvite, onClose, saving, saveError, 
           </div>
 
           {!fixedOrgId && (
-            <Field label="Organization *" error={touched.org_id && errors.org_id}>
+            <Field label="Organization" required error={touched.org_id && errors.org_id}>
               <select
                 value={formData.org_id}
                 onChange={(e) => { setFormData(p => ({ ...p, org_id: e.target.value })); touch('org_id') }}
@@ -130,7 +133,7 @@ export default function InviteUserModal({ onInvite, onClose, saving, saveError, 
             </Field>
           )}
 
-          <Field label="Password *" error={touched.password && errors.password}>
+          <Field label="Password" required error={touched.password && errors.password}>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -146,7 +149,7 @@ export default function InviteUserModal({ onInvite, onClose, saving, saveError, 
             </div>
           </Field>
 
-          <Field label="Confirm Password *" error={touched.password_confirmation && errors.password_confirmation}>
+          <Field label="Confirm Password" required error={touched.password_confirmation && errors.password_confirmation}>
             <input
               type={showPassword ? 'text' : 'password'}
               value={formData.password_confirmation}
@@ -157,7 +160,7 @@ export default function InviteUserModal({ onInvite, onClose, saving, saveError, 
             />
           </Field>
 
-          <Field label="Phone (Optional)" error={touched.phone && errors.phone}>
+          <Field label="Phone" error={touched.phone && errors.phone}>
             <input
               type="tel"
               value={formData.phone}
@@ -176,10 +179,10 @@ export default function InviteUserModal({ onInvite, onClose, saving, saveError, 
               {saveError}
             </div>
           )}
-          <div className="flex gap-2 px-4 py-3.5">
-            <button type="button" onClick={onClose} className="flex-1 px-3 py-2 text-xs border border-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
-            <button onClick={handleSubmit} disabled={saving} className="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-semibold py-2 rounded-lg transition-all disabled:opacity-60">
-              {saving ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+          <div className="flex gap-3 px-4 py-4">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-3 text-sm border border-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+            <button onClick={handleSubmit} disabled={saving} className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-sm font-semibold py-3 rounded-lg transition-all disabled:opacity-60">
+              {saving ? <Loader className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               {saving ? 'Creating…' : 'Create User'}
             </button>
           </div>

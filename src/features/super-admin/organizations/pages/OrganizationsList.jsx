@@ -64,14 +64,15 @@ export default function OrganizationsList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="font-poppins text-lg font-bold text-gray-900">Organizations</h1>
           <p className="text-xs text-gray-500">Manage all organizations on the platform</p>
         </div>
-        <button onClick={() => handleOpenModal()} className="flex items-center gap-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-semibold py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg">
+        <button onClick={() => handleOpenModal()} className="flex items-center gap-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-sm hover:opacity-90 transition-all flex-shrink-0">
           <Plus className="w-3.5 h-3.5" />
-          Create Organization
+          <span className="hidden sm:inline">Create Organization</span>
+          <span className="sm:hidden">New</span>
         </button>
       </div>
 

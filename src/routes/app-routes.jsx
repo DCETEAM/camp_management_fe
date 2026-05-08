@@ -16,6 +16,7 @@ import CreateEditCamp from '../features/org-admin/pages/CreateEditCamp'
 import CampDetail from '../features/org-admin/pages/CampDetail'
 import CampStaffAssignment from '../features/org-admin/pages/CampStaffAssignment'
 import GenerateKioskToken from '../features/org-admin/pages/GenerateKioskToken'
+import GeneratePublicFormLink from '../features/org-admin/pages/GeneratePublicFormLink'
 import CampDashboard from '../features/organizer/pages/CampDashboard'
 import ParticipantList from '../features/organizer/pages/ParticipantList'
 import ParticipantDetail from '../features/organizer/pages/ParticipantDetail'
@@ -30,6 +31,7 @@ import MyQueue from '../features/staff/pages/MyQueue'
 import StepForm from '../features/staff/pages/StepForm'
 import MyCamps from '../features/staff/pages/MyCamps'
 import KioskRegistration from '../features/kiosk/pages/KioskRegistration'
+import PublicStepForm from '../features/public-form/pages/PublicStepForm'
 
 export default function AppRoutes() {
 	return (
@@ -62,6 +64,8 @@ export default function AppRoutes() {
           <Route path="/org-dashboard/camps/create" element={<MainLayout><CreateEditCamp /></MainLayout>} />
           <Route path="/org-dashboard/camps/:id" element={<MainLayout><CampDetail /></MainLayout>} />
           <Route path="/org-dashboard/camps/:id/staff" element={<MainLayout><CampStaffAssignment /></MainLayout>} />
+          <Route path="/org-dashboard/camps/:id/kiosk" element={<MainLayout><GenerateKioskToken /></MainLayout>} />
+          <Route path="/org-dashboard/camps/:id/public-form" element={<MainLayout><GeneratePublicFormLink /></MainLayout>} />
           <Route path="/org-dashboard/camps/:id/report" element={<MainLayout><CampReport /></MainLayout>} />
         </Route>
 
@@ -85,6 +89,9 @@ export default function AppRoutes() {
 
         {/* Kiosk Registration (no layout) */}
         <Route path="/kiosk" element={<KioskRegistration />} />
+
+        {/* Public Step Form (no layout) */}
+        <Route path="/public-form" element={<PublicStepForm />} />
 
 			</Routes>
 		</Router>

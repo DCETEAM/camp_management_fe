@@ -58,10 +58,10 @@ export default function OrgReport() {
   )
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-3 sm:space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
         <div>
-          <h1 className="font-poppins text-lg font-bold text-gray-900">Organization Report</h1>
+          <h1 className="font-poppins text-base sm:text-lg font-bold text-gray-900">Organization Report</h1>
           <p className="text-xs text-gray-500">{rows.length} camp{rows.length !== 1 ? 's' : ''}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -72,7 +72,7 @@ export default function OrgReport() {
             onEndChange={setEndDate}
             onClear={() => { setStartDate(''); setEndDate('') }}
           />
-          <button onClick={load} disabled={loading} className="p-2 hover:bg-gray-100 rounded-lg">
+          <button onClick={load} disabled={loading} className="p-2 hover:bg-gray-100 rounded-lg flex-shrink-0">
             <RefreshCw className={`w-4 h-4 text-gray-400 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
@@ -80,16 +80,16 @@ export default function OrgReport() {
 
       {/* Totals */}
       {rows.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
           {[
             { label: 'Total', value: totals.total, color: 'text-gray-900' },
             { label: 'Completed', value: totals.completed, color: 'text-green-600' },
             { label: 'In Progress', value: totals.in_progress, color: 'text-yellow-600' },
             { label: 'Not Started', value: totals.not_started, color: 'text-gray-500' },
           ].map(({ label, value, color }) => (
-            <div key={label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
-              <p className={`text-2xl font-bold ${color}`}>{value}</p>
-              <p className="text-[11px] text-gray-500 mt-0.5">{label}</p>
+            <div key={label} className="bg-white rounded-lg sm:rounded-xl border border-gray-100 shadow-sm p-2 sm:p-3 text-center">
+              <p className={`text-lg sm:text-xl font-bold ${color}`}>{value}</p>
+              <p className="text-[10px] sm:text-[11px] text-gray-500 mt-0.5">{label}</p>
             </div>
           ))}
         </div>

@@ -200,7 +200,7 @@ export default function MainLayout({ children }) {
           : superAdminNavigation
 
   return (
-    <div className="min-h-screen bg-gray-50 font-inter">
+    <div className="min-h-screen bg-gray-50 font-inter overflow-x-hidden">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
@@ -213,6 +213,7 @@ export default function MainLayout({ children }) {
       <aside className={`
         fixed top-0 left-0 z-50 h-full w-64 bg-white border-r border-gray-200 transition-transform duration-300
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        overflow-y-auto
       `}>
         <div className="flex flex-col h-full">
           <div className="flex items-center gap-3 p-5 border-b border-gray-100">
@@ -308,26 +309,26 @@ export default function MainLayout({ children }) {
       )}
 
       {/* Main content */}
-      <div className="lg:ml-64">
+      <div className="lg:ml-64 min-h-screen flex flex-col">
         {/* Top bar for mobile */}
-        <header className="sticky top-0 z-60 bg-white border-b border-gray-200 lg:hidden">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
-                <Tent className="w-4 h-4 text-white" />
+        <header className="sticky top-0 z-30 bg-white border-b border-gray-200 lg:hidden">
+          <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Tent className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
               </div>
-              <span className="font-poppins font-semibold text-gray-900">Camp Manager</span>
+              <span className="font-poppins font-semibold text-sm sm:text-base text-gray-900 truncate">Camp Manager</span>
             </div>
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {sidebarOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
             </button>
           </div>
         </header>
 
-        <main className="p-4 lg:p-6">
+        <main className="flex-1 p-3 sm:p-4 lg:p-6 overflow-x-auto">
           {children}
         </main>
       </div>

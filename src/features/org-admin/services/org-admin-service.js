@@ -69,6 +69,22 @@ const orgAdminService = {
 		const response = await api.post(`/camps/${campId}/kiosk-token`)
 		return response.data
 	},
+
+	// Public Form Tokens
+	getPublicFormTokens: async (campId) => {
+		const response = await api.get(`/camps/${campId}/public-form-tokens`)
+		return response.data
+	},
+
+	generatePublicFormToken: async (campId, stepTemplateId) => {
+		const response = await api.post(`/camps/${campId}/public-form-tokens`, { step_template_id: stepTemplateId })
+		return response.data
+	},
+
+	revokePublicFormToken: async (campId, tokenId) => {
+		const response = await api.delete(`/camps/${campId}/public-form-tokens/${tokenId}`)
+		return response.data
+	},
 }
 
 export default orgAdminService

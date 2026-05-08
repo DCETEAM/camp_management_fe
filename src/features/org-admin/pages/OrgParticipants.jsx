@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Search, Users, Filter, Loader, AlertCircle, RefreshCw, ChevronRight, Tent } from 'lucide-react'
-import { useAuth } from '../../auth/contexts/AuthContext'
+import { useAuth } from '../../auth/contexts/auth-context'
 import DateRangeFilter from '../../../common/components/DateRangeFilter'
 import api from '../../../core/interceptors/axiosInterceptor'
 

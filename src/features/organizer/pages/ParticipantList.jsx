@@ -70,9 +70,9 @@ function ParticipantModal({ participantId, campId, onClose }) {
   const statusBadge = (s) => ({ completed: 'bg-green-100 text-green-700', in_progress: 'bg-yellow-100 text-yellow-700', not_started: 'bg-gray-100 text-gray-600' }[s] || 'bg-gray-100 text-gray-600')
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 overflow-y-auto"
       onClick={onClose}>
-      <div className="bg-white w-full sm:max-w-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[92vh] rounded-t-2xl"
+      <div className="bg-white w-full max-w-2xl rounded-xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[85vh] my-auto"
         onClick={e => e.stopPropagation()}>
 
         {/* Modal Header */}

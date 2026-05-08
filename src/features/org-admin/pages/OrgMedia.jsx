@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Search, Image, FileText, Download, Loader, AlertCircle, RefreshCw, X } from 'lucide-react'
 import AuthImage from '../../../common/components/AuthImage'
-import { useAuth } from '../../auth/contexts/AuthContext'
+import { useAuth } from '../../auth/contexts/auth-context'
 import DateRangeFilter from '../../../common/components/DateRangeFilter'
 import api from '../../../core/interceptors/axiosInterceptor'
 

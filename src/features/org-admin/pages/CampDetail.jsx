@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Calendar, MapPin, Users, CheckCircle2,
   Clock, Activity, ListChecks, User, FileText,
-  Loader, AlertCircle, RefreshCw
+  Loader, AlertCircle, RefreshCw, QrCode, Link
 } from 'lucide-react'
 import orgAdminService from '../services/org-admin-service'
 
@@ -206,6 +206,14 @@ export default function CampDetail() {
         <button onClick={() => navigate(`/org-dashboard/camps/${id}/staff`)} className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-all">
           <User className="w-3.5 h-3.5" />
           Assign Staff
+        </button>
+        <button onClick={() => navigate(`/org-dashboard/camps/${id}/public-form`)} className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-all">
+          <Link className="w-3.5 h-3.5" />
+          Public Form Link
+        </button>
+        <button onClick={() => navigate(`/org-dashboard/camps/${id}/kiosk`)} className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-all">
+          <QrCode className="w-3.5 h-3.5" />
+          Kiosk Token
         </button>
         <button onClick={() => navigate(`/org-dashboard/camps/${id}/report`)} className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-all">
           <FileText className="w-3.5 h-3.5" />

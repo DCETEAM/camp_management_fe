@@ -79,58 +79,59 @@ export default function EventTypes() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="font-poppins text-lg font-bold text-gray-900">Event Types</h1>
           <p className="text-xs text-gray-500">Define and manage camp event types</p>
         </div>
-        <button onClick={() => handleOpenModal()} className="flex items-center gap-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-semibold py-2 px-4 rounded-lg transition-all shadow-md hover:shadow-lg">
+        <button onClick={() => handleOpenModal()} className="flex items-center gap-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-sm hover:opacity-90 transition-all flex-shrink-0">
           <Plus className="w-3.5 h-3.5" />
-          Create Event Type
+          <span className="hidden sm:inline">Create Event Type</span>
+          <span className="sm:hidden">New</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl p-4 text-white shadow-md">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
-              <CalendarCheck className="w-4 h-4" />
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg sm:rounded-xl p-2 sm:p-3 text-white shadow-md">
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-white/20 rounded-md sm:rounded-lg flex items-center justify-center flex-shrink-0">
+              <CalendarCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             </div>
-            <p className="text-primary-100 text-xs font-medium">Total Event Types</p>
+            <p className="text-primary-100 text-[9px] sm:text-[11px] font-medium leading-tight">Total<br className="sm:hidden"/> Types</p>
           </div>
-          <p className="text-2xl font-bold">{meta.total}</p>
+          <p className="text-lg sm:text-xl font-bold">{meta.total}</p>
         </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 bg-green-100 rounded-lg flex items-center justify-center">
-              <CalendarCheck className="w-4 h-4 text-green-600" />
+        <div className="bg-white rounded-lg sm:rounded-xl p-2 sm:p-3 border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 rounded-md sm:rounded-lg flex items-center justify-center flex-shrink-0">
+              <CalendarCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-600" />
             </div>
-            <p className="text-gray-500 text-xs font-medium">Active (this page)</p>
+            <p className="text-gray-500 text-[9px] sm:text-[11px] font-medium leading-tight">Active</p>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{activeCount}</p>
+          <p className="text-lg sm:text-xl font-bold text-gray-900">{activeCount}</p>
         </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center">
-              <ListChecks className="w-4 h-4 text-blue-600" />
+        <div className="bg-white rounded-lg sm:rounded-xl p-2 sm:p-3 border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-1 sm:mb-2">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-md sm:rounded-lg flex items-center justify-center flex-shrink-0">
+              <ListChecks className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-600" />
             </div>
-            <p className="text-gray-500 text-xs font-medium">Steps (this page)</p>
+            <p className="text-gray-500 text-[9px] sm:text-[11px] font-medium leading-tight">Steps</p>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{totalSteps}</p>
+          <p className="text-lg sm:text-xl font-bold text-gray-900">{totalSteps}</p>
         </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="p-3 border-b border-gray-100">
+        <div className="p-2 sm:p-3 border-b border-gray-100">
           <div className="flex flex-col sm:flex-row gap-2">
-            <div className="relative flex-1 max-w-sm">
+            <div className="relative flex-1 sm:max-w-xs lg:max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search event types..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
               />
             </div>
             <DateRangeFilter
@@ -210,64 +211,64 @@ export default function EventTypes() {
         {/* ── Mobile card list (below md) ── */}
         <div className="md:hidden divide-y divide-gray-100">
           {eventTypes.map((type) => (
-            <div key={type.id} className="p-4 flex flex-col gap-3">
+            <div key={type.id} className="p-3 flex flex-col gap-2">
               {/* Top row: icon + name + status badge */}
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 bg-gradient-to-br from-accent-100 to-accent-200 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <CalendarCheck className="w-5 h-5 text-accent-600" />
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-8 h-8 bg-gradient-to-br from-accent-100 to-accent-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <CalendarCheck className="w-4 h-4 text-accent-600" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-gray-900 truncate">{type.name}</p>
                     {type.description && (
-                      <p className="text-[11px] text-gray-500 line-clamp-2">{type.description}</p>
+                      <p className="text-[10px] text-gray-500 line-clamp-1">{type.description}</p>
                     )}
                   </div>
                 </div>
-                <span className={`flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${type.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                <span className={`flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-medium ${type.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                   {type.active ? 'Active' : 'Inactive'}
                 </span>
               </div>
 
               {/* Meta row: steps + created */}
-              <div className="flex items-center gap-4 text-[11px] text-gray-500">
+              <div className="flex items-center gap-3 text-[10px] text-gray-500">
                 <span className="flex items-center gap-1">
-                  <ListChecks className="w-3.5 h-3.5 text-gray-400" />
+                  <ListChecks className="w-3 h-3 text-gray-400" />
                   {type.step_templates_count || 0} steps
                 </span>
                 <span className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                  <Calendar className="w-3 h-3 text-gray-400" />
                   {new Date(type.created_at).toLocaleDateString()}
                 </span>
               </div>
 
-              {/* Actions row */}
-              <div className="flex items-center gap-2">
+              {/* Actions row - compact icon buttons */}
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => handleOpenModal(type)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+                  className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-md transition-colors"
                 >
-                  <Edit className="w-3.5 h-3.5" /> Edit
+                  <Edit className="w-3 h-3" /> Edit
                 </button>
                 <button
                   onClick={() => openConfirm(type, 'toggle')}
                   disabled={actionLoading}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  className={`flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded-md transition-colors ${
                     type.active
                       ? 'text-red-600 bg-red-50 hover:bg-red-100'
                       : 'text-green-600 bg-green-50 hover:bg-green-100'
                   }`}
                 >
-                  {type.active ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
-                  {type.active ? 'Deactivate' : 'Activate'}
+                  {type.active ? <ToggleRight className="w-3 h-3" /> : <ToggleLeft className="w-3 h-3" />}
+                  {type.active ? 'Off' : 'On'}
                 </button>
                 {(type.step_templates_count || 0) === 0 && (
                   <button
                     onClick={() => openConfirm(type, 'delete')}
                     disabled={actionLoading}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                    className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
                   >
-                    <Trash2 className="w-3.5 h-3.5" /> Delete
+                    <Trash2 className="w-3 h-3" /> Del
                   </button>
                 )}
               </div>
