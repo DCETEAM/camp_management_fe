@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
   Search, ArrowLeft, Users, Filter, Loader, AlertCircle, RefreshCw, ChevronRight,
   X, CheckCircle2, ChevronDown, ChevronUp, Phone, Hash, Calendar,
-  Activity, User, FileText, Image, Download, Clock
+  Activity, User, FileText, Image, Download, Clock, IndianRupee
 } from 'lucide-react'
 import organizerService from '../services/organizer-service'
 import DateRangeFilter from '../../../common/components/DateRangeFilter'
@@ -398,6 +398,11 @@ export default function ParticipantList() {
                   <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusBadge(p.status)}`}>
                     {fmtStatus(p.status)}
                   </span>
+                  {p.payment_status === 'paid' && (
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700">
+                      <IndianRupee className="w-2.5 h-2.5" />Paid
+                    </span>
+                  )}
                   <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
                 </div>
               </button>
@@ -409,7 +414,7 @@ export default function ParticipantList() {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
-                  {['Token','Name','Age','Gender','Phone','Current Step','Status','Registered'].map(h => (
+                  {['Token','Name','Age','Gender','Phone','Current Step','Status','Payment','Registered'].map(h => (
                     <th key={h} className="text-left px-4 py-2.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
@@ -430,6 +435,14 @@ export default function ParticipantList() {
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${statusBadge(p.status)}`}>
                         {fmtStatus(p.status)}
                       </span>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      {p.payment_status === 'paid'
+                        ? <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700"><IndianRupee className="w-2.5 h-2.5" />Paid</span>
+                        : p.payment_status === 'pending'
+                          ? <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-100 text-yellow-700">Pending</span>
+                          : <span className="text-[10px] text-gray-400">—</span>
+                      }
                     </td>
                     <td className="px-4 py-2.5 text-[11px] text-gray-500">
                       {p.registered_at ? new Date(p.registered_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'}

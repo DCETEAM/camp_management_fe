@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Calendar, MapPin, Users, CheckCircle2,
   Clock, Activity, ListChecks, User, FileText,
-  Loader, AlertCircle, RefreshCw, QrCode, Link
+  Loader, AlertCircle, RefreshCw, Link, Pencil, IndianRupee, ShoppingCart
 } from 'lucide-react'
 import orgAdminService from '../services/org-admin-service'
+import CreateCampModal from '../components/CreateCampModal'
 
 const statusBadge = (s) => {
   switch (s) {
@@ -33,6 +34,7 @@ export default function CampDetail() {
   const [staff, setStaff]     = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(null)
+  const [editOpen, setEditOpen] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -104,9 +106,17 @@ export default function CampDetail() {
             </div>
           </div>
         </div>
-        <button onClick={load} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600 flex-shrink-0" title="Refresh">
-          <RefreshCw className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => setEditOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 text-xs font-semibold rounded-lg transition-colors border border-primary-200"
+          >
+            <Pencil className="w-3.5 h-3.5" /> Edit
+          </button>
+          <button onClick={load} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-400 hover:text-gray-600" title="Refresh">
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Summary cards */}
@@ -201,6 +211,46 @@ export default function CampDetail() {
         </div>
       </div>
 
+      {/* Payment info card */}
+      {camp.payment_enabled && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <IndianRupee className="w-4 h-4 text-primary-600" />
+            <h2 className="font-poppins text-sm font-bold text-gray-900">Payment Settings</h2>
+            <span className="ml-auto text-[10px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-semibold">Enabled</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="bg-gray-50 rounded-lg px-3 py-2">
+              <p className="text-[10px] text-gray-500 mb-0.5">Registration Fee</p>
+              <p className="text-sm font-bold text-gray-900 flex items-center gap-0.5"><IndianRupee className="w-3 h-3" />{parseFloat(camp.registration_fee || 0).toFixed(2)}</p>
+            </div>
+            {camp.payment_description && (
+              <div className="bg-gray-50 rounded-lg px-3 py-2 col-span-2 sm:col-span-2">
+                <p className="text-[10px] text-gray-500 mb-0.5">Description</p>
+                <p className="text-xs text-gray-700">{camp.payment_description}</p>
+              </div>
+            )}
+          </div>
+          {camp.add_ons?.length > 0 && (
+            <div className="mt-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <ShoppingCart className="w-3.5 h-3.5 text-gray-500" />
+                <p className="text-xs font-semibold text-gray-700">Add-ons ({camp.add_ons.length})</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {camp.add_ons.map((a, i) => (
+                  <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-800 font-medium">
+                    {a.name}
+                    <span className="flex items-center gap-0.5 text-blue-600 font-bold"><IndianRupee className="w-2.5 h-2.5" />{parseFloat(a.price || 0).toFixed(2)}</span>
+                    <span className={`text-[9px] px-1 py-0.5 rounded-full font-semibold ${a.optional ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>{a.optional ? '◆' : '✓'}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex flex-wrap gap-2.5">
         <button onClick={() => navigate(`/org-dashboard/camps/${id}/staff`)} className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-all">
@@ -211,15 +261,18 @@ export default function CampDetail() {
           <Link className="w-3.5 h-3.5" />
           Public Form Link
         </button>
-        <button onClick={() => navigate(`/org-dashboard/camps/${id}/kiosk`)} className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-all">
-          <QrCode className="w-3.5 h-3.5" />
-          Kiosk Token
-        </button>
         <button onClick={() => navigate(`/org-dashboard/camps/${id}/report`)} className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-all">
           <FileText className="w-3.5 h-3.5" />
           View Report
         </button>
       </div>
+      {editOpen && (
+        <CreateCampModal
+          camp={camp}
+          onClose={() => setEditOpen(false)}
+          onCreated={() => { setEditOpen(false); load() }}
+        />
+      )}
     </div>
   )
 }

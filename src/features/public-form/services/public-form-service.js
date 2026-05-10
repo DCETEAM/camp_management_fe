@@ -34,6 +34,22 @@ const publicFormService = {
 		return response.data
 	},
 
+	// Payment methods
+	checkPaymentStatus: async (campId) => {
+		const response = await publicFormApi.get(`/public-form/camps/${campId}/payment-status`)
+		return response.data
+	},
+
+	createPaymentOrder: async (data) => {
+		const response = await publicFormApi.post('/public-form/payments/create-order', data)
+		return response.data
+	},
+
+	verifyPayment: async (data) => {
+		const response = await publicFormApi.post('/public-form/payments/verify', data)
+		return response.data
+	},
+
 	setPublicFormToken: (token) => {
 		localStorage.setItem('public_form_token', token)
 	},

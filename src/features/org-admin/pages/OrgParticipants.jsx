@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Search, Users, Filter, Loader, AlertCircle, RefreshCw, ChevronRight, Tent } from 'lucide-react'
+import { Search, Users, Filter, Loader, AlertCircle, RefreshCw, ChevronRight, Tent, IndianRupee } from 'lucide-react'
 import { useAuth } from '../../auth/contexts/auth-context'
 import DateRangeFilter from '../../../common/components/DateRangeFilter'
 import api from '../../../core/interceptors/axiosInterceptor'
@@ -127,7 +127,7 @@ export default function OrgParticipants() {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
-                  {['Token','Name','Age','Gender','Phone','Camp','Status','Registered'].map(h => (
+                  {['Token','Name','Age','Gender','Phone','Camp','Status','Payment','Registered'].map(h => (
                     <th key={h} className="text-left px-4 py-2.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
@@ -149,6 +149,14 @@ export default function OrgParticipants() {
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${statusBadge(p.status)}`}>
                         {fmtStatus(p.status)}
                       </span>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      {p.payment_status === 'paid'
+                        ? <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700"><IndianRupee className="w-2.5 h-2.5" />Paid</span>
+                        : p.payment_status === 'pending'
+                          ? <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-100 text-yellow-700">Pending</span>
+                          : <span className="text-[10px] text-gray-400">—</span>
+                      }
                     </td>
                     <td className="px-4 py-2.5 text-[11px] text-gray-500">
                       {p.registered_at ? new Date(p.registered_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'}

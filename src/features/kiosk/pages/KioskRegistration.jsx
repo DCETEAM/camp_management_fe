@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Tent, User, CheckCircle2, Loader } from 'lucide-react'
+import { Tent, User, CheckCircle2, Loader, CreditCard, IndianRupee } from 'lucide-react'
 import kioskService from '../services/kiosk-service'
+import PaymentModal from '../../../common/components/PaymentModal'
 
 export default function KioskRegistration() {
   const [searchParams] = useSearchParams()
@@ -15,17 +16,76 @@ export default function KioskRegistration() {
     gender: 'Male',
     phone: ''
   })
+  
+  // Payment related states
+  const [camp, setCamp] = useState(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentData, setPaymentData] = useState(null)
+  const [registrationComplete, setRegistrationComplete] = useState(false)
 
-  // Get kiosk token from URL
+  // Get kiosk token from URL - ALWAYS use URL token if present
   const urlToken = searchParams.get('token')
-  if (urlToken && !kioskService.getKioskToken()) {
+  if (urlToken) {
     kioskService.setKioskToken(urlToken)
+    console.log('Kiosk token set from URL:', urlToken)
   }
+  
+  // Load camp details on mount to check if payment is required
+  useEffect(() => {
+    const loadCamp = async () => {
+      try {
+        const token = kioskService.getKioskToken()
+        console.log('Current kiosk token:', token)
+        if (!token) {
+          setError('No kiosk token found. Please use a valid kiosk link.')
+          return
+        }
+        const campData = await kioskService.getCamp()
+        console.log('Camp loaded:', campData)
+        setCamp(campData)
+      } catch (err) {
+        console.error('Failed to load camp:', err)
+        setError('Invalid or expired kiosk link: ' + (err.response?.data?.message || err.message))
+      }
+    }
+    loadCamp()
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // Check if payment is required
+    if (camp?.payment_enabled && camp?.registration_fee > 0) {
+      setShowPaymentModal(true)
+      return
+    }
+    
+    // No payment required, proceed with registration
+    await completeRegistration()
+  }
+  
+  const completeRegistration = async (paymentResult = null) => {
     try {
       setLoading(true)
+      
+      // If payment was made, the participant was already created during payment verification
+      if (paymentResult?.participant) {
+        setTokenNumber(paymentResult.participant.token_number)
+        setSubmitted(true)
+        setRegistrationComplete(true)
+        setShowPaymentModal(false)
+        
+        // Reset after 5 seconds
+        setTimeout(() => {
+          setSubmitted(false)
+          setRegistrationComplete(false)
+          setTokenNumber('')
+          setFormData({ name: '', age: '', gender: 'Male', phone: '' })
+        }, 5000)
+        return
+      }
+      
+      // No payment required - create participant directly
       const response = await kioskService.registerParticipant({
         name: formData.name,
         age: parseInt(formData.age),
@@ -34,11 +94,13 @@ export default function KioskRegistration() {
       })
       setTokenNumber(response.token_number)
       setSubmitted(true)
+      setRegistrationComplete(true)
       setError(null)
       
       // Reset after 5 seconds
       setTimeout(() => {
         setSubmitted(false)
+        setRegistrationComplete(false)
         setTokenNumber('')
         setFormData({ name: '', age: '', gender: 'Male', phone: '' })
       }, 5000)
@@ -47,6 +109,14 @@ export default function KioskRegistration() {
     } finally {
       setLoading(false)
     }
+  }
+  
+  const handlePaymentSuccess = (result) => {
+    completeRegistration(result)
+  }
+  
+  const handlePaymentError = (error) => {
+    setError(error?.response?.data?.message || 'Payment failed. Please try again.')
   }
 
   if (submitted) {
@@ -147,6 +217,24 @@ export default function KioskRegistration() {
             </div>
           </div>
 
+          {/* Payment Info Display */}
+          {camp?.payment_enabled && camp?.registration_fee > 0 ? (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-blue-600" />
+                <span className="text-sm text-blue-800">Registration Fee</span>
+              </div>
+              <div className="flex items-center gap-1 font-semibold text-blue-900">
+                <IndianRupee className="w-4 h-4" />
+                {camp.registration_fee.toFixed(2)}
+              </div>
+            </div>
+          ) : camp && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-center">
+              <span className="text-xs text-gray-500">Free Registration (No payment required)</span>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
@@ -155,14 +243,36 @@ export default function KioskRegistration() {
             {loading ? (
               <>
                 <Loader className="w-5 h-5 animate-spin" />
-                Registering...
+                {camp?.payment_enabled && camp?.registration_fee > 0 ? 'Processing...' : 'Registering...'}
               </>
             ) : (
-              'Register'
+              <>
+                {camp?.payment_enabled && camp?.registration_fee > 0 ? (
+                  <>
+                    <CreditCard className="w-5 h-5" />
+                    Pay & Register
+                  </>
+                ) : (
+                  'Register'
+                )}
+              </>
             )}
           </button>
         </form>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSuccess={handlePaymentSuccess}
+        onError={handlePaymentError}
+        paymentData={paymentData}
+        onCreateOrder={kioskService.createPaymentOrder}
+        onVerifyPayment={kioskService.verifyPayment}
+        participantData={formData}
+        campId={camp?.id}
+      />
     </div>
   )
 }

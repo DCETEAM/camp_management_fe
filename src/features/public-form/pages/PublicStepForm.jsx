@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { FileText, User, CheckCircle2, Loader, AlertCircle, Upload, X, Calendar, MapPin } from 'lucide-react'
+import { FileText, User, CheckCircle2, Loader, AlertCircle, Upload, X, Calendar, MapPin, ShoppingCart, IndianRupee } from 'lucide-react'
 import publicFormService from '../services/public-form-service'
 
 export default function PublicStepForm() {
@@ -22,12 +22,15 @@ export default function PublicStepForm() {
   const [fileFields, setFileFields] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [fieldErrors, setFieldErrors] = useState({})
+  const [selectedAddOns, setSelectedAddOns] = useState({})
+  const [paymentInfo, setPaymentInfo] = useState(null)
+  const [showPayment, setShowPayment] = useState(false)
 
   // Get public form token from URL
   const urlToken = searchParams.get('token')
 
   useEffect(() => {
-    if (urlToken && !publicFormService.getPublicFormToken()) {
+    if (urlToken) {
       publicFormService.setPublicFormToken(urlToken)
     }
 
@@ -37,6 +40,13 @@ export default function PublicStepForm() {
         const data = await publicFormService.getStepTemplate()
         setStepTemplate(data.step_template)
         setCamp(data.camp)
+        // Auto-select all required add-ons
+        const required = (data.camp?.add_ons ?? []).filter(a => !a.optional)
+        if (required.length > 0) {
+          const preSelected = {}
+          required.forEach(a => { preSelected[a.name] = a })
+          setSelectedAddOns(preSelected)
+        }
         setError(null)
       } catch (err) {
         setError(err.response?.data?.message || 'Invalid or expired form link. Please request a new link.')
@@ -94,20 +104,37 @@ export default function PublicStepForm() {
     return errors
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    const errors = validate()
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors)
-      // Scroll to first error
-      const firstEl = document.querySelector('[data-field-error]')
-      if (firstEl) firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      return
-    }
+  // Toggle add-on selection
+  const toggleAddOn = (addon) => {
+    setSelectedAddOns(prev => {
+      const key = addon.name
+      if (prev[key]) {
+        const updated = { ...prev }
+        delete updated[key]
+        return updated
+      }
+      return { ...prev, [key]: addon }
+    })
+  }
 
-    setFieldErrors({})
+  const getSelectedAddOnsList = () => Object.values(selectedAddOns)
+
+  const getTotalAmount = () => {
+    const base = parseFloat(camp?.registration_fee ?? 0)
+    // Required add-ons are always included; optional only if selected
+    const campAddOns = camp?.add_ons ?? []
+    const requiredTotal = campAddOns
+      .filter(a => !a.optional)
+      .reduce((s, a) => s + parseFloat(a.price ?? 0), 0)
+    const optionalSelected = Object.values(selectedAddOns)
+      .filter(a => a.optional)
+      .reduce((s, a) => s + parseFloat(a.price ?? 0), 0)
+    return base + requiredTotal + optionalSelected
+  }
+
+  const doSubmit = async (paymentId = null) => {
     setSubmitting(true)
-
+    setError(null)
     try {
       const submitData = {
         name: formData.name,
@@ -115,9 +142,9 @@ export default function PublicStepForm() {
         gender: formData.gender,
         phone: formData.phone || undefined,
         response_data: { ...responseData },
+        ...(paymentId ? { payment_id: paymentId } : {}),
       }
 
-      // Handle file uploads separately using FormData
       const fileEntries = Object.entries(fileFields)
       if (fileEntries.length > 0) {
         const formDataObj = new FormData()
@@ -126,38 +153,114 @@ export default function PublicStepForm() {
         formDataObj.append('gender', submitData.gender)
         if (submitData.phone) formDataObj.append('phone', submitData.phone)
         formDataObj.append('response_data', JSON.stringify(submitData.response_data))
+        if (paymentId) formDataObj.append('payment_id', paymentId)
+        fileEntries.forEach(([key, file]) => formDataObj.append(`response_data.${key}`, file))
 
-        fileEntries.forEach(([key, file]) => {
-          formDataObj.append(`response_data.${key}`, file)
-        })
-
-        // Use axios directly for file upload
         const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
         const token = publicFormService.getPublicFormToken()
         const response = await fetch(`${API_URL}/public-form/submit`, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          headers: { 'Authorization': `Bearer ${token}` },
           body: formDataObj,
         })
-
         if (!response.ok) {
           const errorData = await response.json()
           throw new Error(errorData.message || 'Failed to submit form')
         }
-
         const data = await response.json()
         setTokenNumber(data.token_number)
         setSubmitted(true)
       } else {
-        const response = await publicFormService.submitForm(submitData)
-        setTokenNumber(response.token_number)
+        const res = await publicFormService.submitForm(submitData)
+        setTokenNumber(res.token_number)
         setSubmitted(true)
       }
     } catch (err) {
       setError(err.message || err.response?.data?.message || 'Failed to submit form. Please try again.')
     } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const errors = validate()
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      const firstEl = document.querySelector('[data-field-error]')
+      if (firstEl) firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
+    setFieldErrors({})
+
+    // If payment enabled, show payment step (coerce to boolean — API may return 1/0)
+    if (camp?.payment_enabled == true || camp?.payment_enabled === 1) {
+      setShowPayment(true)
+      return
+    }
+
+    await doSubmit()
+  }
+
+  const handlePayAndSubmit = async () => {
+    setSubmitting(true)
+    setError(null)
+    try {
+      const orderRes = await publicFormService.createPaymentOrder({
+        camp_id: camp.id,
+        participant_data: {
+          name: formData.name,
+          age: parseInt(formData.age),
+          gender: formData.gender,
+          phone: formData.phone,
+        },
+        selected_add_ons: [
+          // Always include required add-ons
+          ...(camp?.add_ons ?? []).filter(a => !a.optional).map(a => ({ name: a.name, price: parseFloat(a.price) })),
+          // Plus any optional ones the user selected
+          ...Object.values(selectedAddOns).filter(a => a.optional).map(a => ({ name: a.name, price: parseFloat(a.price) })),
+        ],
+      })
+
+      if (!orderRes.payment_required) {
+        await doSubmit()
+        return
+      }
+
+      // Launch Razorpay (amount from backend is already in rupees, Razorpay needs paise)
+      const options = {
+        key: orderRes.key_id,
+        amount: Math.round(orderRes.amount * 100),
+        currency: orderRes.currency || 'INR',
+        name: orderRes.camp_name,
+        description: orderRes.description,
+        order_id: orderRes.order_id,
+        prefill: orderRes.prefill,
+        handler: async (rzpResponse) => {
+          try {
+            setSubmitting(true)
+            // Step 1: verify signature
+            const verifyRes = await publicFormService.verifyPayment({
+              payment_id: orderRes.payment_id,
+              razorpay_order_id: rzpResponse.razorpay_order_id,
+              razorpay_payment_id: rzpResponse.razorpay_payment_id,
+              razorpay_signature: rzpResponse.razorpay_signature,
+            })
+            // Step 2: submit form with payment_id so participant is created as paid
+            await doSubmit(verifyRes.payment_id)
+          } catch (err) {
+            setError(err.response?.data?.message || 'Payment succeeded but registration failed. Please contact support.')
+            setSubmitting(false)
+          }
+        },
+        modal: { ondismiss: () => setSubmitting(false) },
+        theme: { color: '#6366f1' },
+      }
+
+      const rzp = new window.Razorpay(options)
+      rzp.open()
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to initiate payment.')
       setSubmitting(false)
     }
   }
@@ -363,6 +466,136 @@ export default function PublicStepForm() {
   }
 
   const formFields = stepTemplate?.form_fields ?? []
+  const campAddOns = camp?.add_ons ?? []
+
+  // Payment / add-on selection screen
+  if (showPayment) {
+    const selectedList = getSelectedAddOnsList()
+    const total = getTotalAmount()
+    const requiredAddOns = campAddOns.filter(a => !a.optional)
+    const optionalAddOns = campAddOns.filter(a => a.optional)
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+          <div className="bg-gradient-to-r from-primary-500 to-primary-600 p-5 text-center">
+            <ShoppingCart className="w-8 h-8 text-white mx-auto mb-2" />
+            <h1 className="font-poppins text-lg font-bold text-white">Payment Summary</h1>
+            <p className="text-primary-100 text-sm">{camp?.name}</p>
+          </div>
+
+          <div className="p-6 space-y-4">
+            {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>}
+
+            {/* Base fee */}
+            <div className="bg-gray-50 rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-800">Registration Fee</span>
+                <span className="flex items-center gap-0.5 text-sm font-bold text-gray-900">
+                  <IndianRupee className="w-3.5 h-3.5" />{parseFloat(camp?.registration_fee ?? 0).toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            {/* Required add-ons */}
+            {requiredAddOns.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Included Items</p>
+                <div className="space-y-2">
+                  {requiredAddOns.map((addon, i) => (
+                    <div key={i} className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-lg px-4 py-2.5">
+                      <span className="text-sm text-blue-800 font-medium">{addon.name}</span>
+                      <span className="flex items-center gap-0.5 text-sm font-bold text-blue-700">
+                        <IndianRupee className="w-3.5 h-3.5" />{parseFloat(addon.price).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Optional add-ons */}
+            {optionalAddOns.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Optional Add-ons</p>
+                <div className="space-y-2">
+                  {optionalAddOns.map((addon, i) => {
+                    const isSelected = !!selectedAddOns[addon.name]
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => toggleAddOn(addon)}
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-all ${
+                          isSelected
+                            ? 'border-primary-500 bg-primary-50'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                            isSelected ? 'border-primary-500 bg-primary-500' : 'border-gray-300'
+                          }`}>
+                            {isSelected && <CheckCircle2 className="w-3 h-3 text-white" />}
+                          </div>
+                          <span className={`text-sm font-medium ${isSelected ? 'text-primary-700' : 'text-gray-800'}`}>{addon.name}</span>
+                        </div>
+                        <span className={`flex items-center gap-0.5 text-sm font-bold ${isSelected ? 'text-primary-600' : 'text-gray-600'}`}>
+                          <IndianRupee className="w-3.5 h-3.5" />{parseFloat(addon.price).toFixed(2)}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Total */}
+            <div className="border-t border-gray-200 pt-4">
+              <div className="flex items-center justify-between">
+                <span className="text-base font-bold text-gray-900">Total</span>
+                <span className="flex items-center gap-0.5 text-xl font-bold text-primary-600">
+                  <IndianRupee className="w-4 h-4" />{total.toFixed(2)}
+                </span>
+              </div>
+              {(() => {
+                const campAddOns = camp?.add_ons ?? []
+                const reqTotal = campAddOns.filter(a => !a.optional).reduce((s, a) => s + parseFloat(a.price ?? 0), 0)
+                const optTotal = Object.values(selectedAddOns).filter(a => a.optional).reduce((s, a) => s + parseFloat(a.price ?? 0), 0)
+                const parts = []
+                if (reqTotal > 0) parts.push(`Included ₹${reqTotal.toFixed(2)}`)
+                if (optTotal > 0) parts.push(`Optional ₹${optTotal.toFixed(2)}`)
+                return parts.length > 0 ? (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Base ₹{parseFloat(camp?.registration_fee ?? 0).toFixed(2)} + {parts.join(' + ')}
+                  </p>
+                ) : null
+              })()}
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowPayment(false)}
+                className="flex-1 py-3 text-sm font-semibold border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={handlePayAndSubmit}
+                disabled={submitting}
+                className="flex-[2] flex items-center justify-center gap-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl disabled:opacity-50 transition-all"
+              >
+                {submitting ? <Loader className="w-5 h-5 animate-spin" /> : <IndianRupee className="w-5 h-5" />}
+                {submitting ? 'Processing...' : `Pay ₹${total.toFixed(2)}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 flex items-center justify-center p-4">
@@ -416,8 +649,8 @@ export default function PublicStepForm() {
               {fieldErrors.name && <p className="mt-1 text-xs text-red-500">{fieldErrors.name}</p>}
             </div>
 
-            {/* Age | Gender | Phone - 3 Column Grid */}
-            <div className="grid grid-cols-3 gap-4">
+            {/* Age | Gender - 2 col, Phone - full width */}
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">Age <span className="text-red-500">*</span></label>
                 <input
@@ -446,19 +679,36 @@ export default function PublicStepForm() {
                 </select>
                 {fieldErrors.gender && <p className="mt-1 text-xs text-red-500">{fieldErrors.gender}</p>}
               </div>
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Phone <span className="text-red-500">*</span></label>
-                <input
-                  type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-3.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
-                  placeholder="Mobile number"
-                />
-              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Phone <span className="text-red-500">*</span></label>
+              <input
+                type="tel"
+                required
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className="w-full px-4 py-3.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                placeholder="Mobile number"
+              />
             </div>
           </div>
+
+          {/* Payment notice banner */}
+          {(camp?.payment_enabled == true || camp?.payment_enabled === 1) && (
+            <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+              <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <IndianRupee className="w-4 h-4 text-amber-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-amber-800">Payment Required</p>
+                <p className="text-[11px] text-amber-600">
+                  Registration fee: ₹{parseFloat(camp?.registration_fee ?? 0).toFixed(2)}
+                  {(camp?.add_ons?.length ?? 0) > 0 && ` + ${camp.add_ons.length} add-on(s)`}
+                </p>
+              </div>
+              <ShoppingCart className="w-4 h-4 text-amber-500 flex-shrink-0" />
+            </div>
+          )}
 
           {/* Custom Form Fields */}
           {formFields.length > 0 && (
@@ -493,7 +743,9 @@ export default function PublicStepForm() {
                   Submitting...
                 </>
               ) : (
-                'Submit Form'
+                (camp?.payment_enabled == true || camp?.payment_enabled === 1)
+                  ? <><IndianRupee className="w-4 h-4" /> Proceed to Payment</>
+                  : 'Submit Form'
               )}
             </button>
           </div>

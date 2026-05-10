@@ -22,8 +22,30 @@ kioskApi.interceptors.request.use(
 )
 
 const kioskService = {
+	// Get camp details from kiosk token
+	getCamp: async () => {
+		const response = await kioskApi.get('/kiosk/camp')
+		return response.data
+	},
+
 	registerParticipant: async (data) => {
 		const response = await kioskApi.post('/kiosk/participants', data)
+		return response.data
+	},
+
+	// Payment methods
+	checkPaymentStatus: async (campId) => {
+		const response = await kioskApi.get(`/kiosk/camps/${campId}/payment-status`)
+		return response.data
+	},
+
+	createPaymentOrder: async (data) => {
+		const response = await kioskApi.post('/kiosk/payments/create-order', data)
+		return response.data
+	},
+
+	verifyPayment: async (data) => {
+		const response = await kioskApi.post('/kiosk/payments/verify', data)
 		return response.data
 	},
 
