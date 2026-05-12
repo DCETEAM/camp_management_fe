@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Users, ArrowRight, Clock, User, Loader, AlertCircle, RefreshCw, ListChecks, UserPlus, CheckCircle2, ArrowLeft, FileText, Upload, X } from 'lucide-react'
+import { Users, ArrowRight, Clock, User, Loader, AlertCircle, RefreshCw, ListChecks, UserPlus, CheckCircle2, ArrowLeft, FileText, Upload, X, IndianRupee } from 'lucide-react'
 import api from '../../../core/interceptors/axiosInterceptor'
 import { useAuth } from '../../auth/contexts/auth-context'
 
@@ -11,15 +11,41 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [token, setToken] = useState(null)
+  const [campData, setCampData] = useState(null)
+  const [paidChecked, setPaidChecked] = useState(false)
+  const [selectedAddOns, setSelectedAddOns] = useState({})
 
   const handle = (k, v) => setForm(p => ({ ...p, [k]: v }))
   const inputCls = "w-full px-3 py-3 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
 
+  useEffect(() => {
+    api.get(`/camps/${campId}`).then(r => {
+      setCampData(r.data)
+      // Pre-select required add-ons
+      const required = (r.data?.add_ons ?? []).filter(a => !a.optional)
+      const pre = {}
+      required.forEach(a => { pre[a.name] = a })
+      setSelectedAddOns(pre)
+    }).catch(() => {})
+  }, [campId])
+
+  const paymentEnabled = campData?.payment_enabled == true || campData?.payment_enabled === 1
+  const canSubmit = !paymentEnabled || paidChecked
+
+  const toggleAddOn = (addon) => {
+    if (!addon.optional) return
+    setSelectedAddOns(prev => {
+      if (prev[addon.name]) { const u = { ...prev }; delete u[addon.name]; return u }
+      return { ...prev, [addon.name]: addon }
+    })
+  }
+
   const submit = async (e) => {
     e.preventDefault()
+    if (!canSubmit) return
+    setSaving(true)
+    setError(null)
     try {
-      setSaving(true)
-      setError(null)
       const pRes = await api.post('/participants', {
         camp_id: parseInt(campId),
         name: form.name,
@@ -28,13 +54,42 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
         phone: form.phone,
       })
       const participant = pRes.data
-      await api.post('/step-responses', {
+
+      // Calculate total including only selected add-ons (required + selected optional)
+      const registrationFee = parseFloat(campData?.registration_fee ?? 0)
+      const selectedAddOnsList = Object.values(selectedAddOns)
+      const addOnsTotal = selectedAddOnsList.reduce((s, a) => s + parseFloat(a.price ?? 0), 0)
+      const totalAmount = registrationFee + addOnsTotal
+
+      // Build response_data with payment info
+      const responseData = {
+        name: form.name,
+        age: form.age,
+        gender: form.gender,
+        phone: form.phone || '',
+        ...extraFields,
+      }
+      if (paymentEnabled) {
+        responseData.payment_status = paidChecked ? 'paid' : 'unpaid'
+        responseData.payment_method = paidChecked ? 'offline' : null
+        responseData.payment_amount = paidChecked ? totalAmount : 0
+        responseData.registration_fee = registrationFee
+        responseData.add_ons = selectedAddOnsList.map(a => ({ name: a.name, price: parseFloat(a.price), optional: a.optional }))
+        responseData.add_ons_total = addOnsTotal
+      }
+
+      const payload = {
         participant_id: participant.id,
         step_template_id: parseInt(stepTemplateId),
-        response_data: { name: form.name, age: form.age, gender: form.gender, phone: form.phone || '', ...extraFields },
+        response_data: responseData,
         outcome: 'Completed',
-      })
-      // Upload any file fields
+      }
+      if (paymentEnabled && paidChecked) {
+        payload.payment_method = 'offline'
+      }
+
+      await api.post('/step-responses', payload)
+
       const fileEntries = Object.entries(fileFields)
       for (const [key, file] of fileEntries) {
         const fd = new FormData()
@@ -126,8 +181,8 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
             />
           </div>
 
-          {/* Age | Gender | Phone - 3 Column Grid */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* Age & Gender - 2 columns, Phone - full width */}
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="block text-sm font-semibold text-gray-700">
                 Age <span className="text-red-500">*</span>
@@ -160,19 +215,20 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
                 <option>Other</option>
               </select>
             </div>
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-gray-700">
-                Phone <span className="text-red-500">*</span>
-              </label>
-              <input
-                value={form.phone}
-                onChange={e => handle('phone', e.target.value)}
-                required
-                className={inputCls}
-                placeholder="Mobile number"
-                inputMode="tel"
-              />
-            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-gray-700">
+              Phone <span className="text-red-500">*</span>
+            </label>
+            <input
+              value={form.phone}
+              onChange={e => handle('phone', e.target.value)}
+              required
+              className={inputCls}
+              placeholder="Mobile number"
+              inputMode="tel"
+            />
           </div>
 
           {/* Extra fields from step template */}
@@ -219,16 +275,116 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
             </div>
           ))}
 
-          {/* Buttons — same as StepForm */}
-          <div className="flex gap-2 pt-3 border-t border-gray-100">
+          {/* Payment section - Professional design */}
+          {paymentEnabled && (
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <IndianRupee className="w-4 h-4" /> Payment Summary
+                  </h3>
+                  <span className="text-xs text-white/80">Offline Collection</span>
+                </div>
+              </div>
+
+              <div className="p-4 space-y-3">
+                {/* Registration Fee */}
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-gray-600">Registration Fee</span>
+                  <span className="text-sm font-semibold text-gray-900">₹{parseFloat(campData?.registration_fee ?? 0).toFixed(2)}</span>
+                </div>
+
+                {/* Required add-ons */}
+                {(campData?.add_ons ?? []).filter(a => !a.optional).length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Included</p>
+                    {(campData?.add_ons ?? []).filter(a => !a.optional).map(a => (
+                      <div key={a.name} className="flex items-center justify-between py-1.5 px-3 bg-green-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-green-600" />
+                          <span className="text-sm text-gray-700">{a.name}</span>
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">₹{parseFloat(a.price).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Optional add-ons - Selectable cards */}
+                {(campData?.add_ons ?? []).filter(a => a.optional).length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Optional Add-ons</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {(campData?.add_ons ?? []).filter(a => a.optional).map(a => {
+                        const isSelected = !!selectedAddOns[a.name]
+                        return (
+                          <button
+                            key={a.name}
+                            type="button"
+                            onClick={() => toggleAddOn(a)}
+                            className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all ${isSelected ? 'bg-primary-50 border-primary-500' : 'bg-white border-gray-200 hover:border-primary-300'}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${isSelected ? 'bg-primary-500' : 'border-2 border-gray-300'}`}>
+                                {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-white" />}
+                              </div>
+                              <span className={`text-sm ${isSelected ? 'font-semibold text-primary-900' : 'text-gray-700'}`}>{a.name}</span>
+                            </div>
+                            <span className={`text-sm font-semibold ${isSelected ? 'text-primary-700' : 'text-gray-600'}`}>₹{parseFloat(a.price).toFixed(2)}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Total */}
+                <div className="border-t-2 border-gray-100 pt-3 mt-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-base font-bold text-gray-900">Total Amount</span>
+                    <span className="flex items-center gap-1 text-xl font-bold text-primary-600">
+                      <IndianRupee className="w-5 h-5" />
+                      {((parseFloat(campData?.registration_fee ?? 0)) + Object.values(selectedAddOns).reduce((s, a) => s + parseFloat(a.price ?? 0), 0)).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Payment confirmation checkbox */}
+                <div className={`p-4 rounded-lg border-2 transition-all ${paidChecked ? 'bg-green-50 border-green-400' : 'bg-gray-50 border-gray-200'}`}>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <div className="relative flex items-center pt-0.5">
+                      <input
+                        type="checkbox"
+                        checked={paidChecked}
+                        onChange={(e) => setPaidChecked(e.target.checked)}
+                        className={`w-6 h-6 rounded border-2 cursor-pointer transition-colors ${paidChecked ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}`}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-sm font-semibold ${paidChecked ? 'text-green-800' : 'text-gray-800'}`}>
+                        {paidChecked ? 'Payment Received ✓' : 'Confirm Payment Received'}
+                      </p>
+                      <p className={`text-xs mt-0.5 ${paidChecked ? 'text-green-600' : 'text-gray-500'}`}>
+                        {paidChecked ? 'You can now register the participant.' : 'Please collect payment before registering.'}
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4">
             <button type="button" onClick={onBack}
-              className="flex-1 px-3 py-3 text-sm border border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors">
-              Back
+              className="flex-1 px-4 py-3.5 text-sm font-semibold border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all">
+              ← Back
             </button>
-            <button type="submit" disabled={saving}
-              className="flex-[2] flex items-center justify-center gap-1.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white text-sm font-semibold py-3 rounded-xl transition-all disabled:opacity-50">
-              {saving ? <Loader className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-              {saving ? 'Registering…' : 'Register'}
+            <button type="submit" disabled={saving || !canSubmit}
+              className="flex-[2] flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white text-sm font-bold py-3.5 rounded-xl shadow-lg shadow-primary-500/30 transition-all disabled:opacity-50 disabled:shadow-none">
+              {saving ? <Loader className="w-5 h-5 animate-spin" /> : <UserPlus className="w-5 h-5" />}
+              {saving ? 'Registering…' : paymentEnabled ? (paidChecked ? 'Complete Registration' : 'Confirm Payment First') : 'Register Participant'}
             </button>
           </div>
         </div>

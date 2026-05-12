@@ -93,10 +93,18 @@ export default function StepForm() {
     setFieldErrors({})
     try {
       setSubmitting(true)
+      // Build response_data with participant info + form values
+      const responseData = {
+        name: participant?.name || '',
+        age: participant?.age || '',
+        gender: participant?.gender || '',
+        phone: participant?.phone || '',
+        ...formValues,
+      }
       await api.post('/step-responses', {
         participant_id: parseInt(participantId),
         step_template_id: parseInt(stepTemplateId),
-        response_data: formValues,
+        response_data: responseData,
         outcome,
       })
       navigate(`/staff-workstation/${campId}/queue`)
@@ -327,7 +335,7 @@ export default function StepForm() {
             </div>
             <div>
               <p className="text-sm font-semibold text-gray-900">{participant?.name}</p>
-              <p className="text-xs text-gray-500">{participant?.age}y &middot; {participant?.gender}{participant?.phone ? ` · ${participant.phone}` : ''}</p>
+              <p className="text-xs text-gray-500">{participant?.age}y &middot; {participant?.gender}{` · ${participant?.phone || ''}`}</p>
             </div>
           </div>
           {/* Step progress pills */}
@@ -434,7 +442,7 @@ export default function StepForm() {
                     </label>
                     <input
                       type="text"
-                      value={participant?.phone || 'N/A'}
+                      value={participant?.phone || ''}
                       disabled
                       className="w-full px-3 py-3 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
                     />

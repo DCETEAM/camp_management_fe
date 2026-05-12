@@ -18,6 +18,7 @@ function Field({ label, error, children, required = false }) {
     <div className="space-y-1.5">
       <label className="block text-xs font-semibold text-gray-700">
         {label}
+        {required && <span className="text-red-500"> *</span>}
         {!required && <span className="text-gray-400 font-normal"> (Optional)</span>}
       </label>
       {children}
@@ -31,7 +32,7 @@ const EMPTY = { name: '', email: '', role: 'staff', phone: '', org_id: '', passw
 const validateForm = (d, fixedOrgId) => ({
   name: validate.name(d.name),
   email: validate.email(d.email),
-  phone: validate.phone(d.phone),
+  phone: validate.required(d.phone, 'Phone number'),
   org_id: !fixedOrgId && d.role !== 'super_admin' && !d.org_id ? 'Organization is required.' : null,
   password: !d.password ? 'Password is required.' : d.password.length < 8 ? 'Minimum 8 characters.' : null,
   password_confirmation: d.password_confirmation !== d.password ? 'Passwords do not match.' : null,
@@ -63,7 +64,7 @@ export default function InviteUserModal({ onInvite, onClose, saving, saveError, 
       email: formData.email.trim(),
       password: formData.password,
       role: formData.role,
-      phone: formData.phone.trim() || null,
+      phone: formData.phone.trim(),
       org_id: formData.org_id ? parseInt(formData.org_id) : null,
     }
     onInvite(payload)
@@ -160,7 +161,7 @@ export default function InviteUserModal({ onInvite, onClose, saving, saveError, 
             />
           </Field>
 
-          <Field label="Phone" error={touched.phone && errors.phone}>
+          <Field label="Phone" required error={touched.phone && errors.phone}>
             <input
               type="tel"
               value={formData.phone}

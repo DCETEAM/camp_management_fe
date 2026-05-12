@@ -14,10 +14,13 @@ const inputBase = 'w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus
 const inputError = 'border-red-400 bg-red-50'
 const inputNormal = 'border-gray-200'
 
-function Field({ label, error, children }) {
+function Field({ label, error, children, required = false }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-700 mb-1">{label}</label>
+      <label className="block text-xs font-semibold text-gray-700 mb-1">
+        {label}
+        {required && <span className="text-red-500"> *</span>}
+      </label>
       {children}
       {error && <p className="mt-1 text-[10px] text-red-600">{error}</p>}
     </div>
@@ -27,7 +30,7 @@ function Field({ label, error, children }) {
 const validateUserForm = (data) => ({
   name: validate.name(data.name),
   email: validate.email(data.email),
-  phone: validate.phone(data.phone),
+  phone: validate.required(data.phone, 'Phone number'),
   new_password: data.new_password && data.new_password.length < 8 ? 'Minimum 8 characters.' : null,
   confirm_password: data.new_password && data.confirm_password !== data.new_password ? 'Passwords do not match.' : null,
 })
@@ -83,7 +86,7 @@ export default function UserEditModal({ user, onSave, onClose, saving, saveError
         </div>
 
         <form onSubmit={handleSubmit} className="px-4 py-4 space-y-3 overflow-y-auto flex-1">
-          <Field label="Email *" error={touched.email && errors.email}>
+          <Field label="Email" required error={touched.email && errors.email}>
             <input
               type="text"
               value={formData.email}
@@ -94,7 +97,7 @@ export default function UserEditModal({ user, onSave, onClose, saving, saveError
             />
           </Field>
 
-          <Field label="Full Name *" error={touched.name && errors.name}>
+          <Field label="Full Name" required error={touched.name && errors.name}>
             <input
               type="text"
               value={formData.name}
@@ -130,7 +133,7 @@ export default function UserEditModal({ user, onSave, onClose, saving, saveError
             </div>
           )}
 
-          <Field label="Phone (Optional)" error={touched.phone && errors.phone}>
+          <Field label="Phone" required error={touched.phone && errors.phone}>
             <input
               type="tel"
               value={formData.phone}

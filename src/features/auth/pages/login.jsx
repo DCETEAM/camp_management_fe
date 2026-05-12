@@ -179,8 +179,8 @@ export default function Login() {
 						{/* Email */}
 						<div>
 							<label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
-								Email Address
-							</label>
+							Email Address <span className="text-red-500">*</span>
+						</label>
 							<div className="relative">
 								<Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
 								<input
@@ -200,8 +200,8 @@ export default function Login() {
 						<div>
 							<div className="flex items-center justify-between mb-1.5">
 								<label htmlFor="password" className="block text-sm font-medium text-gray-700">
-									Password
-								</label>
+								Password <span className="text-red-500">*</span>
+							</label>
 								<Link
 									to="/forgot-password"
 									className="text-primary-600 hover:text-primary-700 text-xs font-semibold transition-colors"

@@ -104,7 +104,7 @@ export default function CreateCampModal({ onClose, onCreated, camp }) {
         </div>
 
         <form onSubmit={handleSubmit} className="px-4 py-4 space-y-3 overflow-y-auto flex-1">
-          <Field label="Camp Name *" error={touched.name && errors.name}>
+          <Field label={<span>Camp Name <span className="text-red-500">*</span></span>} error={touched.name && errors.name}>
             <input
               type="text"
               value={formData.name}
@@ -115,7 +115,7 @@ export default function CreateCampModal({ onClose, onCreated, camp }) {
             />
           </Field>
 
-          <Field label="Event Type *" error={touched.event_type_id && errors.event_type_id}>
+          <Field label={<span>Event Type <span className="text-red-500">*</span></span>} error={touched.event_type_id && errors.event_type_id}>
             <div className="relative">
               <CalendarCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
               <select
@@ -130,7 +130,7 @@ export default function CreateCampModal({ onClose, onCreated, camp }) {
             </div>
           </Field>
 
-          <Field label="Camp Date *" error={touched.camp_date && errors.camp_date}>
+          <Field label={<span>Camp Date <span className="text-red-500">*</span></span>} error={touched.camp_date && errors.camp_date}>
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
               <input
@@ -144,7 +144,7 @@ export default function CreateCampModal({ onClose, onCreated, camp }) {
             </div>
           </Field>
 
-          <Field label="Location *" error={touched.location && errors.location}>
+          <Field label={<span>Location <span className="text-red-500">*</span></span>} error={touched.location && errors.location}>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
               <input
@@ -182,7 +182,7 @@ export default function CreateCampModal({ onClose, onCreated, camp }) {
 
             {formData.payment_enabled && (
               <div className="space-y-3 pl-6">
-                <Field label="Registration Fee (₹) *" error={touched.registration_fee && errors.registration_fee}>
+                <Field label={<span>Registration Fee (₹) <span className="text-red-500">*</span></span>} error={touched.registration_fee && errors.registration_fee}>
                   <div className="relative">
                     <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
                     <input

@@ -11,6 +11,7 @@ function Field({ label, error, children, required = false }) {
 		<div className="space-y-1.5">
 			<label className="block text-xs font-semibold text-gray-700">
 				{label}
+				{required && <span className="text-red-500"> *</span>}
 				{!required && <span className="text-gray-400 font-normal"> (Optional)</span>}
 			</label>
 			{children}
@@ -78,7 +79,7 @@ export default function OrganizationFormModal({ editingOrg, formData, setFormDat
 						/>
 					</Field>
 
-					<Field label="Phone" error={touched.phone && errors.phone}>
+					<Field label="Phone" required error={touched.phone && errors.phone}>
 						<input
 							type="tel"
 							value={formData.phone}
