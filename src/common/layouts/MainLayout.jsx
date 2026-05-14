@@ -59,7 +59,7 @@ export default function MainLayout({ children }) {
       icon: CalendarCheck
     },
     { 
-      name: 'Step Templates', 
+      name: 'Step Template', 
       href: '/admin-dashboard/step-templates', 
       icon: ListChecks
     }

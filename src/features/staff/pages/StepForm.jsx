@@ -420,8 +420,8 @@ export default function StepForm() {
             </div>
 
             <div className="p-4 space-y-4">
-              {/* Mandatory Participant Info - Read Only */}
-              <div className="pb-4 border-b border-gray-100">
+              {/* Mandatory Participant Info - Read Only — only for step 1 */}
+              {isStep1 && <div className="pb-4 border-b border-gray-100">
                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Participant Information (Required)</h3>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="space-y-1.5">
@@ -475,7 +475,7 @@ export default function StepForm() {
                     />
                   </div>
                 </div>
-              </div>
+              </div>}
 
               {/* Custom Form Fields */}
               {formFields.length === 0 && (

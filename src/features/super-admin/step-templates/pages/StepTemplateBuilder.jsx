@@ -141,6 +141,7 @@ export default function StepTemplateBuilder() {
     }
     setNewField(EMPTY_FIELD)
     setFieldError('')
+    setSaveError(null)
   }
 
   const removeField = (idx) => {
@@ -169,14 +170,27 @@ export default function StepTemplateBuilder() {
   }
 
   const stepHasResponses = (editingStep?.step_responses_count || 0) > 0
+  const MODAL_BASIC_KEYS = ['name','age','gender','phone','phone_number','full_name','fullname']
+  const isStep1Modal = editingStep ? editingStep.step_order === 1 : steps.length === 0
+  const modalVisibleFields = isStep1Modal
+    ? formData.formFields
+    : formData.formFields.filter(f => !MODAL_BASIC_KEYS.includes(f.key.toLowerCase()))
 
   const handleSaveStep = async (e) => {
     e.preventDefault()
     if (!selectedEventType) return
     setSaveError(null)
+    const current = formDataRef.current
+    const isAddingStep1 = !editingStep && steps.length === 0
+    const isEditingStep1 = editingStep && editingStep.step_order === 1
+    const BASIC_KEYS = ['name', 'age', 'gender', 'phone', 'phone_number', 'full_name', 'fullname']
+    const customFields = current.formFields.filter(f => !BASIC_KEYS.includes(f.key.toLowerCase()))
+    if (!isAddingStep1 && !isEditingStep1 && customFields.length === 0) {
+      setSaveError('Please add at least one field before saving.')
+      return
+    }
     try {
       setSaving(true)
-      const current = formDataRef.current
       if (editingStep) {
         const payload = {
           step_name: current.stepName.trim(),
@@ -437,9 +451,9 @@ export default function StepTemplateBuilder() {
                     <p className="text-[10px] text-blue-500 mt-1.5 italic">These fields are automatically included and cannot be edited.</p>
                   </div>}
 
-                  {formData.formFields.length > 0 && (
+                  {modalVisibleFields.length > 0 && (
                     <div className="space-y-1.5 mb-3">
-                      {formData.formFields.map((field, idx) => (
+                      {modalVisibleFields.map((field, idx) => (
                         <div key={idx} className={`flex items-start justify-between px-3 py-2 border rounded-lg gap-2 ${
                           editingFieldIdx === idx ? 'bg-primary-50 border-primary-200' : 'bg-gray-50 border-gray-100'
                         }`}>
