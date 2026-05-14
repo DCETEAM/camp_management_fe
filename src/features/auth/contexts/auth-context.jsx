@@ -40,7 +40,7 @@ export function AuthProvider({ children }) {
 		setUser(null)
 		setIsAuthenticated(false)
 		authService.logout()
-		window.location.href = '/login'
+		window.location.href = window.location.pathname + '#/login'
 	}
 
 	return (

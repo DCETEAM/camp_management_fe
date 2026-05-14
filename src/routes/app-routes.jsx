@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from '../features/auth/components/protected-route'
 
 import Login from '../features/auth/pages/login'
@@ -33,7 +33,7 @@ import PublicStepForm from '../features/public-form/pages/PublicStepForm'
 
 export default function AppRoutes() {
 	return (
-		<Router basename="/">
+		<Router>
 			<Routes>
 				<Route path="/login" element={<Login />} />
 				<Route path="/register" element={<Register />} />

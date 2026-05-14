@@ -28,7 +28,7 @@ api.interceptors.response.use(
 			if (!window.location.pathname.includes('/login')) {
 				localStorage.removeItem('access_token')
 				localStorage.removeItem('user')
-				window.location.href = '/login'
+				window.location.href = window.location.pathname + '#/login'
 			}
 		}
 		return Promise.reject(error)

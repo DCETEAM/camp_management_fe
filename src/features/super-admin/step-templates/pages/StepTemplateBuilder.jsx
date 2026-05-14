@@ -413,8 +413,8 @@ export default function StepTemplateBuilder() {
                     )}
                   </div>
 
-                  {/* Mandatory Participant Info Notice */}
-                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  {/* Mandatory Participant Info Notice — only for step 1 */}
+                  {(editingStep ? editingStep.step_order === 1 : steps.length === 0) && <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-[10px] font-semibold text-blue-800 mb-1.5">Participant Information (Always Required)</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="flex items-center gap-1.5 text-[11px] text-blue-700">
@@ -435,7 +435,7 @@ export default function StepTemplateBuilder() {
                       </div>
                     </div>
                     <p className="text-[10px] text-blue-500 mt-1.5 italic">These fields are automatically included and cannot be edited.</p>
-                  </div>
+                  </div>}
 
                   {formData.formFields.length > 0 && (
                     <div className="space-y-1.5 mb-3">

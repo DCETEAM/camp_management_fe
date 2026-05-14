@@ -4,7 +4,7 @@ import { ArrowLeft, Link, RefreshCw, Copy, Calendar, MapPin, CheckCircle2, Loade
 import orgAdminService from '../services/org-admin-service'
 import stepTemplateService from '../../super-admin/step-templates/services/step-template-service'
 
-const publicFormBase = `${window.location.origin}/public-form`
+const publicFormBase = `${import.meta.env.VITE_APP_URL || window.location.origin + '/camp_management'}/#/public-form`
 
 export default function GeneratePublicFormLink() {
   const { id } = useParams()

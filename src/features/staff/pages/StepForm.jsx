@@ -67,9 +67,12 @@ export default function StepForm() {
     setUploadedFiles(prev => { const u = { ...prev }; delete u[key]; return u })
   }
 
+  const isStep1 = (stepTemplate?.step_order ?? 1) === 1
+  const BASIC_KEYS = ['name','age','gender','phone','phone_number','full_name','fullname']
+
   const validate = () => {
     const errors = {}
-    const fields = stepTemplate?.form_fields ?? []
+    const fields = (stepTemplate?.form_fields ?? []).filter(f => !BASIC_KEYS.includes(f.key.toLowerCase()))
     fields.forEach(field => {
       if (!field.required) return
       const val = field.type === 'file' ? uploadedFiles[field.key] : formValues[field.key]
@@ -77,7 +80,7 @@ export default function StepForm() {
         errors[field.key] = `${field.label} is required`
       }
     })
-    if (!outcome) errors['_outcome'] = 'Please select an outcome'
+    if (isStep1 && !outcome) errors['_outcome'] = 'Please select an outcome'
     return errors
   }
 
@@ -105,7 +108,7 @@ export default function StepForm() {
         participant_id: parseInt(participantId),
         step_template_id: parseInt(stepTemplateId),
         response_data: responseData,
-        outcome,
+        outcome: isStep1 ? outcome : 'Completed',
       })
       navigate(`/staff-workstation/${campId}/queue`)
     } catch (err) {
@@ -151,8 +154,10 @@ export default function StepForm() {
         return (
           <input
             type="number"
+            inputMode="numeric"
             value={formValues[field.key] || ''}
-            onChange={(e) => { handleFieldChange(field.key, e.target.value); clearError(field.key) }}
+            onChange={(e) => { handleFieldChange(field.key, e.target.value.replace(/[^0-9.]/g, '')); clearError(field.key) }}
+            onKeyDown={(e) => { if (['e','E','+','-'].includes(e.key)) e.preventDefault() }}
             className={`${baseInput} ${borderClass}`}
             placeholder={`Enter ${field.label.toLowerCase()}`}
           />
@@ -268,7 +273,7 @@ export default function StepForm() {
     }
   }
 
-  const formFields = stepTemplate?.form_fields ?? []
+  const formFields = (stepTemplate?.form_fields ?? []).filter(f => !BASIC_KEYS.includes(f.key.toLowerCase()))
   const outcomeOptions = ['Completed', 'Normal', 'Referred', 'Treated', 'No Action', 'Incomplete']
 
   // Derived counts
@@ -492,7 +497,8 @@ export default function StepForm() {
                 </div>
               ))}
 
-              {/* Outcome */}
+              {/* Outcome — only for step 1 */}
+              {isStep1 && (
               <div className="pt-3 border-t border-gray-100">
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                   Outcome <span className="text-red-500">*</span>
@@ -514,6 +520,7 @@ export default function StepForm() {
                   </p>
                 )}
               </div>
+              )}
 
               {/* Submit */}
               <div className="flex gap-2 pt-3">

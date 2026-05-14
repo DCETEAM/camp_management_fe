@@ -309,8 +309,10 @@ export default function PublicStepForm() {
         return (
           <input
             type="number"
+            inputMode="numeric"
             value={responseData[field.key] || ''}
-            onChange={(e) => handleFieldChange(field.key, e.target.value)}
+            onChange={(e) => handleFieldChange(field.key, e.target.value.replace(/[^0-9.]/g, ''))}
+            onKeyDown={(e) => { if (['e','E','+','-'].includes(e.key)) e.preventDefault() }}
             className={`${baseInput} ${borderClass}`}
             placeholder={`Enter ${field.label.toLowerCase()}`}
           />
@@ -847,7 +849,7 @@ export default function PublicStepForm() {
                 </>
               ) : (
                 (camp?.payment_enabled == true || camp?.payment_enabled === 1)
-                  ? <><IndianRupee className="w-4 h-4" /> Pay ₹{getTotalAmount().toFixed(2)} & Register</>
+                  ? <>Pay ₹{getTotalAmount().toFixed(2)} & Register</>
                   : 'Submit Form'
               )}
             </button>
