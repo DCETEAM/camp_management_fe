@@ -53,7 +53,7 @@ export default function OrganizationFormModal({ editingOrg, formData, setFormDat
 							onChange={(e) => { setFormData({ ...formData, name: e.target.value }); touch('name') }}
 							onBlur={() => touch('name')}
 							className={`${inputBase} ${touched.name && errors.name ? inputError : inputNormal}`}
-							placeholder="Enter organization name"
+							placeholder="e.g. City General Hospital"
 						/>
 					</Field>
 

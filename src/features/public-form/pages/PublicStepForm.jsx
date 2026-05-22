@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { FileText, User, CheckCircle2, Loader, AlertCircle, Upload, X, Calendar, MapPin, ShoppingCart, IndianRupee, Phone } from 'lucide-react'
 import publicFormService from '../services/public-form-service'
+import { validate as validateUtil } from '../../../common/utils/validation'
 
 export default function PublicStepForm() {
   const [searchParams] = useSearchParams()
@@ -89,10 +90,14 @@ export default function PublicStepForm() {
     const basicFieldKeys = ['name', 'age', 'gender', 'phone', 'phone_number', 'full_name', 'fullname']
 
     // Validate basic fields from formData
-    if (!formData.name?.trim()) errors.name = 'Full name is required'
+    const nameErr = validateUtil.name(formData.name)
+    if (nameErr) errors.name = nameErr
+    
     if (!formData.age) errors.age = 'Age is required'
     if (!formData.gender) errors.gender = 'Gender is required'
-    if (!formData.phone?.trim()) errors.phone = 'Phone number is required'
+    
+    const phoneErr = validateUtil.phone(formData.phone) || (!formData.phone?.trim() ? 'Phone number is required' : null)
+    if (phoneErr) errors.phone = phoneErr
 
     // Validate custom form fields (skip basic fields that are already validated above)
     fields.forEach(field => {

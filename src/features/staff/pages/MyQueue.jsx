@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Users, ArrowRight, Clock, User, Loader, AlertCircle, RefreshCw, ListChecks, UserPlus, CheckCircle2, ArrowLeft, FileText, Upload, X, IndianRupee } from 'lucide-react'
 import api from '../../../core/interceptors/axiosInterceptor'
 import { useAuth } from '../../auth/contexts/auth-context'
+import { validate as validateUtil } from '../../../common/utils/validation'
 
 function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack, onSuccess, onRegistered }) {
   const [form, setForm] = useState({ name: '', age: '', gender: '', phone: '' })
@@ -42,6 +43,15 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
 
   const submit = async (e) => {
     e.preventDefault()
+
+    // Validate
+    const nameErr = validateUtil.name(form.name)
+    const phoneErr = validateUtil.phone(form.phone)
+    if (nameErr || phoneErr) {
+      setError(nameErr || phoneErr)
+      return
+    }
+
     if (!canSubmit) return
     setSaving(true)
     setError(null)
@@ -135,7 +145,16 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
               className="flex-1 py-3 text-sm font-semibold border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors">
               Back to Queue
             </button>
-            <button onClick={() => { onRegistered?.(); setToken(null); setForm({ name: '', age: '', gender: '', phone: '' }); setExtraFields({}); setFileFields({}) }}
+            <button onClick={() => { 
+                onRegistered?.(); 
+                setToken(null); 
+                setForm({ name: '', age: '', gender: '', phone: '' }); 
+                setExtraFields({}); 
+                setFileFields({}); 
+                setPaidChecked(false);
+                setSelectedAddOns({});
+                setError(null);
+              }}
               className="flex-[2] py-3 text-sm font-semibold bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl flex items-center justify-center gap-2">
               <UserPlus className="w-4 h-4" /> Register Next
             </button>

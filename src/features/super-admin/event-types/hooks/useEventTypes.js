@@ -5,7 +5,7 @@ const PER_PAGE = 10
 
 export function useEventTypes() {
 	const [eventTypes, setEventTypes] = useState([])
-	const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 })
+	const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0, total_active: 0, total_steps: 0 })
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState(null)
 	const [page, setPage] = useState(1)
@@ -22,7 +22,13 @@ export function useEventTypes() {
 			if (currentEnd) params.end_date = currentEnd
 			const data = await eventTypeService.getEventTypes(params)
 			setEventTypes(data.data)
-			setMeta({ current_page: data.current_page, last_page: data.last_page, total: data.total })
+			setMeta({ 
+				current_page: data.current_page, 
+				last_page: data.last_page, 
+				total: data.total,
+				total_active: data.total_active,
+				total_steps: data.total_steps
+			})
 			setError(null)
 		} catch (err) {
 			setError(err.response?.data?.message || 'Failed to load event types')

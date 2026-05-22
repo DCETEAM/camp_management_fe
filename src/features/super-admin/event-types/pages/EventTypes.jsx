@@ -37,7 +37,6 @@ export default function EventTypes() {
       closeConfirm()
     } catch (err) {
       setActionError(err.response?.data?.message || `Failed to ${action} event type`)
-      closeConfirm()
     } finally {
       setActionLoading(false)
     }
@@ -74,8 +73,8 @@ export default function EventTypes() {
     }
   }
 
-  const activeCount = eventTypes.filter(t => Boolean(t.active)).length
-  const totalSteps = eventTypes.reduce((sum, t) => sum + (t.step_templates_count || 0), 0)
+  const activeCount = meta.total_active || 0
+  const totalSteps = meta.total_steps || 0
 
   return (
     <div className="space-y-4">
@@ -184,7 +183,7 @@ export default function EventTypes() {
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
                       <Calendar className="w-3 h-3" />
-                      {new Date(type.created_at).toLocaleDateString()}
+                      {new Date(type.created_at).toLocaleDateString('en-GB')}
                     </div>
                   </td>
                   <td className="px-4 py-2.5 text-right">
@@ -238,7 +237,7 @@ export default function EventTypes() {
                 </span>
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3 text-gray-400" />
-                  {new Date(type.created_at).toLocaleDateString()}
+                  {new Date(type.created_at).toLocaleDateString('en-GB')}
                 </span>
               </div>
 

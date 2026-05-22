@@ -48,7 +48,7 @@ export default function StepTemplateBuilder() {
     const load = async () => {
       try {
         setLoadingTypes(true)
-        const data = await eventTypeService.getEventTypes({ per_page: 100 })
+        const data = await eventTypeService.getEventTypes({ per_page: 100, active_only: true })
         setEventTypes(Array.isArray(data) ? data : (data.data || []))
       } catch {
         setError('Failed to load event types.')
@@ -117,7 +117,12 @@ export default function StepTemplateBuilder() {
   }
 
   const handleAddField = () => {
-    if (!newField.key.trim()) { setFieldError('Key is required.'); return }
+    setSaveError(null)
+    const key = newField.key.trim().toLowerCase()
+    if (!key) { setFieldError('Key is required.'); return }
+    if (['name', 'age', 'gender', 'phone', 'phone_number', 'full_name', 'fullname'].includes(key)) {
+      setFieldError('This key is reserved for system use.'); return
+    }
     if (!newField.label.trim()) { setFieldError('Label is required.'); return }
     const currentFields = formDataRef.current.formFields
     const currentEditIdx = editingFieldIdxRef.current

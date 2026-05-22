@@ -128,7 +128,7 @@ export default function OrganizationsList() {
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${org.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     {org.active ? 'Active' : 'Inactive'}
                   </span>
-                  <span className="flex items-center gap-1 text-[11px] text-gray-400"><Calendar className="w-3 h-3" />{new Date(org.created_at).toLocaleDateString()}</span>
+                  <span className="flex items-center gap-1 text-[11px] text-gray-400"><Calendar className="w-3 h-3" />{new Date(org.created_at).toLocaleDateString('en-GB')}</span>
                 </div>
               </div>
             </div>
@@ -174,7 +174,7 @@ export default function OrganizationsList() {
                     </span>
                   </td>
                   <td className="px-4 py-2.5">
-                    <div className="flex items-center gap-1.5 text-[11px] text-gray-500"><Calendar className="w-3 h-3" />{new Date(org.created_at).toLocaleDateString()}</div>
+                    <div className="flex items-center gap-1.5 text-[11px] text-gray-500"><Calendar className="w-3 h-3" />{new Date(org.created_at).toLocaleDateString('en-GB')}</div>
                   </td>
                   <td className="px-4 py-2.5 text-right">
                     <div className="flex items-center justify-end gap-2">

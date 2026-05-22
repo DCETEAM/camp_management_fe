@@ -37,7 +37,7 @@ export const validateOrgForm = (formData) => {
     name: validate.name(formData.name),
     type: validate.required(formData.type, 'Type'),
     email: validate.email(formData.email),
-    phone: validate.required(formData.phone, 'Phone number'),
+    phone: validate.phone(formData.phone) || validate.required(formData.phone, 'Phone number'),
   }
 }
 

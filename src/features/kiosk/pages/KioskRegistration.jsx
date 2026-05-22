@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { Tent, User, CheckCircle2, Loader, CreditCard, IndianRupee } from 'lucide-react'
 import kioskService from '../services/kiosk-service'
 import PaymentModal from '../../../common/components/PaymentModal'
+import { validate as validateUtil } from '../../../common/utils/validation'
 
 export default function KioskRegistration() {
   const [searchParams] = useSearchParams()
@@ -53,6 +54,15 @@ export default function KioskRegistration() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // Validate
+    const nameErr = validateUtil.name(formData.name)
+    const phoneErr = validateUtil.phone(formData.phone)
+    
+    if (nameErr || phoneErr) {
+      setError(nameErr || phoneErr)
+      return
+    }
     
     // Check if payment is required
     if (camp?.payment_enabled && camp?.registration_fee > 0) {

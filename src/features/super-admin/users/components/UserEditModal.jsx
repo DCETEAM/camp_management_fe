@@ -30,7 +30,7 @@ function Field({ label, error, children, required = false }) {
 const validateUserForm = (data) => ({
   name: validate.name(data.name),
   email: validate.email(data.email),
-  phone: validate.required(data.phone, 'Phone number'),
+  phone: validate.phone(data.phone) || validate.required(data.phone, 'Phone number'),
   new_password: data.new_password && data.new_password.length < 8 ? 'Minimum 8 characters.' : null,
   confirm_password: data.new_password && data.confirm_password !== data.new_password ? 'Passwords do not match.' : null,
 })
@@ -104,7 +104,7 @@ export default function UserEditModal({ user, onSave, onClose, saving, saveError
               onChange={(e) => { setFormData(p => ({ ...p, name: e.target.value })); touch('name') }}
               onBlur={() => touch('name')}
               className={`${inputBase} ${touched.name && errors.name ? inputError : inputNormal}`}
-              placeholder="Enter full name"
+              placeholder="e.g. John Doe"
             />
           </Field>
 

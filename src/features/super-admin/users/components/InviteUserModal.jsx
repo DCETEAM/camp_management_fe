@@ -32,7 +32,7 @@ const EMPTY = { name: '', email: '', role: 'staff', phone: '', org_id: '', passw
 const validateForm = (d, fixedOrgId) => ({
   name: validate.name(d.name),
   email: validate.email(d.email),
-  phone: validate.required(d.phone, 'Phone number'),
+  phone: validate.phone(d.phone) || validate.required(d.phone, 'Phone number'),
   org_id: !fixedOrgId && d.role !== 'super_admin' && !d.org_id ? 'Organization is required.' : null,
   password: !d.password ? 'Password is required.' : d.password.length < 8 ? 'Minimum 8 characters.' : null,
   password_confirmation: d.password_confirmation !== d.password ? 'Passwords do not match.' : null,
@@ -91,7 +91,7 @@ export default function InviteUserModal({ onInvite, onClose, saving, saveError, 
               onChange={(e) => { setFormData(p => ({ ...p, name: e.target.value })); touch('name') }}
               onBlur={() => touch('name')}
               className={`${inputBase} ${touched.name && errors.name ? inputError : inputNormal}`}
-              placeholder="Enter full name"
+              placeholder="e.g. John Doe"
             />
           </Field>
 

@@ -110,6 +110,8 @@ export default function StepForm() {
         response_data: responseData,
         outcome: isStep1 ? outcome : 'Completed',
       })
+      
+      // Navigate back to the queue for the same camp
       navigate(`/staff-workstation/${campId}/queue`)
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to save response.')

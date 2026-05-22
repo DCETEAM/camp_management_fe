@@ -60,8 +60,8 @@ export default function CampStaffAssignment() {
 
   const currentStep = steps.find(s => s.id === selectedStepId)
   const currentAssignments = assignments.filter(a => Number(a.step_template_id) === Number(selectedStepId))
-  const assignedUserIds = currentAssignments.map(a => Number(a.user_id))
-  const available = orgUsers.filter(u => !assignedUserIds.includes(u.id))
+  const allAssignedUserIds = assignments.map(a => Number(a.user_id))
+  const available = orgUsers.filter(u => !allAssignedUserIds.includes(u.id))
 
   const handleAssign = async () => {
     if (!selectedUserId || !selectedStepId) return
