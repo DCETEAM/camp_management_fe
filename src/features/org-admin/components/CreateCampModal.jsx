@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react'
-import { X, Save, Loader, AlertCircle, CalendarCheck, Calendar, MapPin, CreditCard, IndianRupee, Plus, Trash2, ShoppingCart } from 'lucide-react'
+import { X, Save, Loader, AlertCircle, CalendarCheck, MapPin, CreditCard, IndianRupee, Plus, Trash2, ShoppingCart, Megaphone } from 'lucide-react'
+import DateInput from '../../../common/components/DateInput'
+import { serializeRegistrationNote } from '../../../common/utils/noteFieldUtils'
+import RegistrationNoteEditor from '../../../common/components/RegistrationNoteEditor'
+import { DEFAULT_REGISTRATION_SUCCESS_MESSAGE } from '../../../common/utils/registrationSuccessUtils'
 import orgAdminService from '../services/org-admin-service'
 import { useAuth } from '../../auth/contexts/auth-context'
 
@@ -17,8 +21,13 @@ function Field({ label, error, children }) {
   )
 }
 
-const EMPTY = { name: '', event_type_id: '', camp_date: '', location: '', payment_enabled: false, registration_fee: '', payment_description: '' }
+const EMPTY = {
+  name: '', event_type_id: '', camp_date: '', location: '',
+  payment_enabled: false, registration_fee: '', payment_description: '',
+  show_token_on_registration: true, registration_success_message: '',
+}
 const EMPTY_ADDON = { name: '', price: '', optional: true }
+const EMPTY_NOTE = { content: '', style: 'success' }
 
 export default function CreateCampModal({ onClose, onCreated, camp }) {
   const isEdit = !!camp
@@ -32,27 +41,63 @@ export default function CreateCampModal({ onClose, onCreated, camp }) {
     payment_enabled: !!camp.payment_enabled,
     registration_fee: camp.registration_fee ? String(camp.registration_fee) : '',
     payment_description: camp.payment_description || '',
+    show_token_on_registration: camp.show_token_on_registration !== false && camp.show_token_on_registration !== 0,
+    registration_success_message: camp.registration_success_message || '',
   } : EMPTY)
   const [touched, setTouched] = useState({})
   const [eventTypes, setEventTypes] = useState([])
+  const [loadingEventTypes, setLoadingEventTypes] = useState(true)
+  const [eventTypesError, setEventTypesError] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(null)
   const [addOns, setAddOns] = useState(() => isEdit ? (camp.add_ons ?? []) : [])
   const [newAddOn, setNewAddOn] = useState(EMPTY_ADDON)
+  const [registrationNotes, setRegistrationNotes] = useState(() => isEdit ? (camp.registration_notes ?? []) : [])
+  const [newNote, setNewNote] = useState(EMPTY_NOTE)
+
+  const orgId = user?.org_id ?? user?.organization?.id
 
   useEffect(() => {
-    if (user?.org_id) {
-      orgAdminService.getAllowedEventTypes(user.org_id).then(data => {
-        const list = Array.isArray(data) ? data : (data.data || [])
-        setEventTypes(list.filter(e => e.active !== false))
-      }).catch(() => {})
+    if (!orgId) {
+      setEventTypes([])
+      setLoadingEventTypes(false)
+      setEventTypesError(
+        user?.role === 'super_admin'
+          ? 'Super admin accounts are not linked to an organization. Log in as the org admin for this organization to create camps.'
+          : 'Your account is not linked to an organization.'
+      )
+      return
     }
-  }, [user])
+
+    let cancelled = false
+    setLoadingEventTypes(true)
+    setEventTypesError(null)
+
+    orgAdminService.getAllowedEventTypes(orgId)
+      .then((data) => {
+        if (cancelled) return
+        const list = Array.isArray(data) ? data : (data?.data ?? [])
+        setEventTypes(list)
+        if (list.length === 0) {
+          setEventTypesError('No event types are assigned to your organization yet. Ask a super admin to allow event types first.')
+        }
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setEventTypes([])
+        setEventTypesError(err.response?.data?.message || 'Failed to load event types.')
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingEventTypes(false)
+      })
+
+    return () => { cancelled = true }
+  }, [orgId, user?.role])
 
   const errors = {
     name: !formData.name.trim() ? 'Camp name is required.' : formData.name.trim().length < 2 ? 'Minimum 2 characters.' : null,
     event_type_id: !formData.event_type_id ? 'Event type is required.' : null,
-    camp_date: !formData.camp_date ? 'Camp date is required.' : null,
+    camp_date: !formData.camp_date ? 'Camp date is required (dd/mm/yyyy).' : null,
     location: !formData.location.trim() ? 'Location is required.' : null,
     registration_fee: formData.payment_enabled && (!formData.registration_fee || parseFloat(formData.registration_fee) <= 0) ? 'Valid fee amount is required when payment is enabled.' : null,
   }
@@ -65,6 +110,10 @@ export default function CreateCampModal({ onClose, onCreated, camp }) {
     setTouched({ name: true, event_type_id: true, camp_date: true, location: true })
     if (hasErrors) return
     setSaveError(null)
+    const notesList = [...registrationNotes]
+    if (newNote.content?.trim()) {
+      notesList.push({ ...newNote })
+    }
     const payload = {
       name: formData.name.trim(),
       event_type_id: parseInt(formData.event_type_id),
@@ -74,6 +123,11 @@ export default function CreateCampModal({ onClose, onCreated, camp }) {
       registration_fee: formData.payment_enabled ? parseFloat(formData.registration_fee) || 0 : 0,
       payment_description: formData.payment_description || '',
       add_ons: formData.payment_enabled ? addOns.map(a => ({ name: a.name.trim(), price: parseFloat(a.price) || 0, optional: a.optional })) : [],
+      registration_notes: notesList.map(serializeRegistrationNote).filter(Boolean),
+      show_token_on_registration: formData.show_token_on_registration,
+      registration_success_message: formData.show_token_on_registration
+        ? null
+        : (formData.registration_success_message?.trim() || null),
     }
     try {
       setSaving(true)
@@ -122,26 +176,28 @@ export default function CreateCampModal({ onClose, onCreated, camp }) {
                 value={formData.event_type_id}
                 onChange={(e) => { setFormData(p => ({ ...p, event_type_id: e.target.value })); touch('event_type_id') }}
                 onBlur={() => touch('event_type_id')}
-                className={`${inputBase} pl-8 bg-white ${touched.event_type_id && errors.event_type_id ? inputError : inputNormal}`}
+                disabled={loadingEventTypes || eventTypes.length === 0}
+                className={`${inputBase} pl-8 bg-white ${touched.event_type_id && errors.event_type_id ? inputError : inputNormal} disabled:bg-gray-50 disabled:text-gray-500`}
               >
-                <option value="">— Select event type —</option>
+                <option value="">
+                  {loadingEventTypes ? 'Loading event types…' : '— Select event type —'}
+                </option>
                 {eventTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
             </div>
+            {eventTypesError && (
+              <p className="mt-1 text-[10px] text-amber-600">{eventTypesError}</p>
+            )}
           </Field>
 
           <Field label={<span>Camp Date <span className="text-red-500">*</span></span>} error={touched.camp_date && errors.camp_date}>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-              <input
-                type="date"
-                value={formData.camp_date}
-                min={new Date().toISOString().split('T')[0]}
-                onChange={(e) => { setFormData(p => ({ ...p, camp_date: e.target.value })); touch('camp_date') }}
-                onBlur={() => touch('camp_date')}
-                className={`${inputBase} pl-8 ${touched.camp_date && errors.camp_date ? inputError : inputNormal}`}
-              />
-            </div>
+            <DateInput
+              value={formData.camp_date}
+              min={isEdit ? undefined : new Date().toISOString().split('T')[0]}
+              onChange={(iso) => { setFormData(p => ({ ...p, camp_date: iso })); touch('camp_date') }}
+              onBlur={() => touch('camp_date')}
+              className={`${inputBase} ${touched.camp_date && errors.camp_date ? inputError : inputNormal}`}
+            />
           </Field>
 
           <Field label={<span>Location <span className="text-red-500">*</span></span>} error={touched.location && errors.location}>
@@ -159,6 +215,90 @@ export default function CreateCampModal({ onClose, onCreated, camp }) {
           </Field>
 
           <p className="text-[10px] text-gray-400">Status will be set automatically based on the camp date — upcoming, active (today), or closed.</p>
+
+          {/* Registration notes — per camp only */}
+          <div className="border-t border-gray-100 pt-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Megaphone className="w-4 h-4 text-primary-600" />
+              <h3 className="text-xs font-semibold text-gray-900">Registration Notes</h3>
+            </div>
+            <p className="text-[10px] text-gray-400 mb-3">
+              Only for this camp. Write one message — the preview shows exactly what registrants will see.
+            </p>
+
+            {registrationNotes.length > 0 && (
+              <div className="space-y-3 mb-3">
+                {registrationNotes.map((note, i) => (
+                  <RegistrationNoteEditor
+                    key={i}
+                    note={note}
+                    compact
+                    showRemove
+                    campPreview={{
+                      name: formData.name,
+                      registration_fee: formData.registration_fee,
+                      payment_description: formData.payment_description,
+                    }}
+                    onChange={(updated) => setRegistrationNotes((n) => n.map((x, idx) => (idx === i ? updated : x)))}
+                    onRemove={() => setRegistrationNotes((n) => n.filter((_, idx) => idx !== i))}
+                  />
+                ))}
+              </div>
+            )}
+
+            <RegistrationNoteEditor
+              note={newNote}
+              campPreview={{
+                name: formData.name,
+                registration_fee: formData.registration_fee,
+                payment_description: formData.payment_description,
+              }}
+              onChange={setNewNote}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (!newNote.content?.trim()) return
+                setRegistrationNotes((n) => [...n, { ...newNote }])
+                setNewNote(EMPTY_NOTE)
+              }}
+              disabled={!newNote.content?.trim()}
+              className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-primary-500 hover:bg-primary-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-lg transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Add this note
+            </button>
+          </div>
+
+          {/* After registration */}
+          <div className="border-t border-gray-100 pt-4 mt-4">
+            <h3 className="text-xs font-semibold text-gray-900 mb-2">After Registration</h3>
+            <div className="flex items-center gap-2 mb-3">
+              <input
+                type="checkbox"
+                id="show_token_on_registration"
+                checked={formData.show_token_on_registration}
+                onChange={(e) => setFormData(p => ({ ...p, show_token_on_registration: e.target.checked }))}
+                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+              <label htmlFor="show_token_on_registration" className="text-xs text-gray-700">
+                Show token number after registration
+              </label>
+            </div>
+            {!formData.show_token_on_registration && (
+              <Field label="Success message">
+                <textarea
+                  value={formData.registration_success_message}
+                  onChange={(e) => setFormData(p => ({ ...p, registration_success_message: e.target.value }))}
+                  rows={2}
+                  className={`${inputBase} resize-none ${inputNormal}`}
+                  placeholder={DEFAULT_REGISTRATION_SUCCESS_MESSAGE}
+                />
+                <p className="mt-1 text-[10px] text-gray-400">
+                  Shown instead of the token. Use {'{{camp_name}}'} for the camp name.
+                </p>
+              </Field>
+            )}
+          </div>
 
           {/* Payment Settings */}
           <div className="border-t border-gray-100 pt-4 mt-4">

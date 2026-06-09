@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom'
 import { Tent, User, CheckCircle2, Loader, CreditCard, IndianRupee } from 'lucide-react'
 import kioskService from '../services/kiosk-service'
 import PaymentModal from '../../../common/components/PaymentModal'
+import RegistrationSuccessDisplay from '../../../common/components/RegistrationSuccessDisplay'
+import { campShowsToken } from '../../../common/utils/registrationSuccessUtils'
 import { validate as validateUtil } from '../../../common/utils/validation'
 
 export default function KioskRegistration() {
@@ -57,10 +59,9 @@ export default function KioskRegistration() {
     
     // Validate
     const nameErr = validateUtil.name(formData.name)
-    const phoneErr = validateUtil.phone(formData.phone)
     
-    if (nameErr || phoneErr) {
-      setError(nameErr || phoneErr)
+    if (nameErr) {
+      setError(nameErr)
       return
     }
     
@@ -97,10 +98,12 @@ export default function KioskRegistration() {
       
       // No payment required - create participant directly
       const response = await kioskService.registerParticipant({
-        name: formData.name,
-        age: parseInt(formData.age),
-        gender: formData.gender,
-        phone: formData.phone || undefined
+        response_data: {
+          name: formData.name,
+          age: formData.age ? parseInt(formData.age, 10) : null,
+          gender: formData.gender,
+          phone: formData.phone?.trim() || '',
+        },
       })
       setTokenNumber(response.token_number)
       setSubmitted(true)
@@ -137,12 +140,11 @@ export default function KioskRegistration() {
             <CheckCircle2 className="w-10 h-10 text-green-600" />
           </div>
           <h2 className="font-poppins text-2xl font-bold text-gray-900 mb-2">Registration Complete!</h2>
-          <p className="text-gray-600 mb-6">Please note down your token number</p>
-          
-          <div className="bg-primary-50 border-2 border-primary-200 rounded-xl p-6 mb-6">
-            <p className="text-sm text-gray-500 mb-1">Your Token Number</p>
-            <p className="text-5xl font-bold text-primary-700 tracking-wider">{tokenNumber}</p>
-          </div>
+          <p className="text-gray-600 mb-6">
+            {campShowsToken(camp) ? 'Please note down your token number' : 'Thank you for registering'}
+          </p>
+
+          <RegistrationSuccessDisplay camp={camp} tokenNumber={tokenNumber} tokenLabel="Your Token Number" variant="large" />
           
           <p className="text-xs text-gray-400">Form will reset in a few seconds...</p>
         </div>

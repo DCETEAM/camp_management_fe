@@ -19,6 +19,11 @@ export const validate = {
     return null
   },
 
+  phoneRequired: (v) => {
+    if (!v || !v.trim()) return 'Phone number is required.'
+    return validate.phone(v)
+  },
+
   required: (v, label = 'This field') => {
     if (!v || !v.trim()) return `${label} is required.`
     if (v.trim().length < 2) return `${label} must be at least 2 characters.`
@@ -37,7 +42,7 @@ export const validateOrgForm = (formData) => {
     name: validate.name(formData.name),
     type: validate.required(formData.type, 'Type'),
     email: validate.email(formData.email),
-    phone: validate.phone(formData.phone) || validate.required(formData.phone, 'Phone number'),
+    phone: validate.phoneRequired(formData.phone) || validate.required(formData.phone, 'Phone number'),
   }
 }
 

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, Calendar, MapPin, Users, CheckCircle2,
-  Clock, Activity, ListChecks, User, FileText,
+  Clock, Activity, ListChecks, User,
   Loader, AlertCircle, RefreshCw, Link, Pencil, IndianRupee, ShoppingCart
 } from 'lucide-react'
 import orgAdminService from '../services/org-admin-service'
@@ -260,10 +260,6 @@ export default function CampDetail() {
         <button onClick={() => navigate(`/org-dashboard/camps/${id}/public-form`)} className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-all">
           <Link className="w-3.5 h-3.5" />
           Public Form Link
-        </button>
-        <button onClick={() => navigate(`/org-dashboard/camps/${id}/report`)} className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-all">
-          <FileText className="w-3.5 h-3.5" />
-          View Report
         </button>
       </div>
       {editOpen && (

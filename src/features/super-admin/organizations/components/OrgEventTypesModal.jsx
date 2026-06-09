@@ -73,7 +73,7 @@ export default function OrgEventTypesModal({ org, onClose }) {
 						<p className="text-xs text-gray-400 text-center py-10">No active event types found.</p>
 					) : (
 						<div className="space-y-1.5">
-							<p className="text-[10px] text-gray-500 mb-2">Select which event types this organization is allowed to use when creating camps. If none are selected, all active types are allowed.</p>
+							<p className="text-[10px] text-gray-500 mb-2">Select which event types this organization is allowed to use when creating camps. Only checked types will be available — none are selected by default for new organizations.</p>
 							{allEventTypes.map(et => (
 								<button
 									key={et.id}

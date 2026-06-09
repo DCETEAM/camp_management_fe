@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
-import { Search, Filter, Image as ImageIcon, FileText, Download, Eye, X, Calendar, User, Tag, ListChecks, Loader, AlertCircle, RefreshCw } from 'lucide-react'
+import { Search, Filter, Image as ImageIcon, FileText, Download, X, Loader, AlertCircle, RefreshCw } from 'lucide-react'
 import organizerService from '../services/organizer-service'
 import DateRangeFilter from '../../../common/components/DateRangeFilter'
 import api from '../../../core/interceptors/axiosInterceptor'
 import AuthImage from '../../../common/components/AuthImage'
-
-const isImage = (mime) => mime?.startsWith('image/')
+import MediaFolderGallery from '../../../common/components/MediaFolderGallery'
+import { isImageFile } from '../../../common/utils/mediaGrouping'
 
 export default function MediaGallery() {
   const { id } = useParams()
@@ -31,6 +31,7 @@ export default function MediaGallery() {
             step_template_id: stepFilter || undefined,
             start_date: startDate || undefined,
             end_date: endDate || undefined,
+            per_page: 200,
           }
         }),
         organizerService.getStepStats(id),
@@ -60,8 +61,8 @@ export default function MediaGallery() {
       })
     : files
 
-  const imageCount = filtered.filter(f => isImage(f.file_type)).length
-  const docCount   = filtered.filter(f => !isImage(f.file_type)).length
+  const imageCount = filtered.filter(f => isImageFile(f)).length
+  const docCount   = filtered.filter(f => !isImageFile(f)).length
 
   const handleDownload = (file) => {
     const token = localStorage.getItem('access_token')
@@ -168,75 +169,14 @@ export default function MediaGallery() {
             <AlertCircle className="w-7 h-7 text-red-400" />
             <p className="text-sm text-red-600">{error}</p>
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="p-10 text-center">
-            <ImageIcon className="w-8 h-8 text-gray-200 mx-auto mb-3" />
-            <p className="text-sm font-semibold text-gray-700">No files found</p>
-            <p className="text-xs text-gray-400 mt-1">Try adjusting your search or filter</p>
-          </div>
         ) : (
-          <div className="p-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {filtered.map(file => {
-              const name    = file.file_name || 'file'
-              const isImg   = isImage(file.file_type)
-              return (
-                <div key={file.id}
-                  className="border border-gray-200 rounded-xl overflow-hidden hover:border-primary-300 hover:shadow-md transition-all group">
-                  {/* Thumbnail */}
-                  <div className="relative h-32 bg-gray-50 flex items-center justify-center overflow-hidden">
-                    {isImg ? (
-                      <AuthImage
-                        src={`${import.meta.env.VITE_API_URL}/media/${file.id}/file`}
-                        alt={name}
-                        className="w-full h-full object-cover"
-                        placeholderClass="w-full h-full"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-red-50 to-orange-100 flex items-center justify-center">
-                        <FileText className="w-10 h-10 text-red-300" />
-                      </div>
-                    )}
-                    {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                      <button onClick={() => setPreviewFile(file)}
-                        className="p-2 bg-white rounded-lg shadow-md hover:bg-gray-50">
-                        <Eye className="w-4 h-4 text-gray-700" />
-                      </button>
-                      <button onClick={() => handleDownload(file)}
-                        className="p-2 bg-white rounded-lg shadow-md hover:bg-gray-50">
-                        <Download className="w-4 h-4 text-gray-700" />
-                      </button>
-                    </div>
-                    <span className={`absolute top-2 right-2 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${isImg ? 'bg-blue-500 text-white' : 'bg-red-500 text-white'}`}>
-                      {isImg ? 'IMG' : 'DOC'}
-                    </span>
-                  </div>
-                  {/* Meta */}
-                  <div className="p-2.5 space-y-1">
-                    <p className="text-xs font-semibold text-gray-900 truncate" title={name}>{name}</p>
-                    <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                      <Tag className="w-3 h-3 flex-shrink-0" />
-                      <span className="truncate">{file.participant?.token_number} · {file.participant?.name}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                      <ListChecks className="w-3 h-3 flex-shrink-0" />
-                      <span>{file.step_template?.step_name || '—'}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                      <User className="w-3 h-3 flex-shrink-0" />
-                      <span className="truncate">{file.uploader?.name || '—'}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-[10px] text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {file.created_at ? new Date(file.created_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'}
-                      </span>
-                      <span>{fmtSize(file.size)}</span>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+          <div className="p-3">
+            <MediaFolderGallery
+              files={filtered}
+              showCampFolders={false}
+              onPreview={setPreviewFile}
+              emptyMessage="No files found"
+            />
           </div>
         )}
       </div>
@@ -260,7 +200,7 @@ export default function MediaGallery() {
             <div className="flex-1 overflow-auto p-4 space-y-4">
               {/* Preview */}
               <div className="w-full rounded-xl overflow-hidden border border-gray-100 bg-gray-50 flex items-center justify-center min-h-48">
-                {isImage(previewFile.file_type) ? (
+                {isImageFile(previewFile) ? (
                   <AuthImage
                     src={`${import.meta.env.VITE_API_URL}/media/${previewFile.id}/file`}
                     alt={previewFile.file_name}

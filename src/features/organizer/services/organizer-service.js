@@ -26,6 +26,11 @@ const organizerService = {
 		return response.data
 	},
 
+	getParticipantFieldCatalog: async (campId) => {
+		const response = await api.get(`/camps/${campId}/participant-field-catalog`)
+		return response.data
+	},
+
 	getParticipantDetail: async (participantId) => {
 		const response = await api.get(`/participants/${participantId}`)
 		return response.data
@@ -41,17 +46,6 @@ const organizerService = {
 		return response.data
 	},
 
-	getCampReport: async (campId) => {
-		const response = await api.get(`/camps/${campId}/report`)
-		return response.data
-	},
-
-	exportCampReport: async (campId) => {
-		const response = await api.get(`/camps/${campId}/report/export`, {
-			responseType: 'blob',
-		})
-		return response.data
-	},
 }
 
 export default organizerService

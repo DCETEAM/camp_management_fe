@@ -8,7 +8,6 @@ import {
   Calendar,
   ListChecks,
   UserPlus,
-  BarChart3,
   Loader,
   AlertCircle
 
@@ -245,13 +244,6 @@ export default function CampDashboard() {
         >
           <Users className="w-3.5 h-3.5" />
           All Participants
-        </button>
-        <button
-          onClick={() => navigate(`/camp-dashboard/${id}/report`)}
-          className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-600 text-xs font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition-all"
-        >
-          <BarChart3 className="w-3.5 h-3.5" />
-          View Report
         </button>
         <button
           onClick={() => navigate(`/camp-dashboard/${id}/participants`)}

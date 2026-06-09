@@ -19,11 +19,9 @@ import GeneratePublicFormLink from '../features/org-admin/pages/GeneratePublicFo
 import CampDashboard from '../features/organizer/pages/CampDashboard'
 import ParticipantList from '../features/organizer/pages/ParticipantList'
 import ParticipantDetail from '../features/organizer/pages/ParticipantDetail'
-import CampReport from '../features/organizer/pages/CampReport'
 import MediaGallery from '../features/organizer/pages/MediaGallery'
 import OrgDashboard from '../features/org-admin/pages/OrgDashboard'
 import OrgParticipants from '../features/org-admin/pages/OrgParticipants'
-import OrgReport from '../features/org-admin/pages/OrgReport'
 import OrgMedia from '../features/org-admin/pages/OrgMedia'
 import StaffAssignment from '../features/organizer/pages/StaffAssignment'
 import MyQueue from '../features/staff/pages/MyQueue'
@@ -55,7 +53,6 @@ export default function AppRoutes() {
         <Route element={<ProtectedRoute allowedRoles={['org_admin', 'super_admin']} />}>
           <Route path="/org-dashboard" element={<MainLayout><OrgDashboard /></MainLayout>} />
           <Route path="/org-dashboard/participants" element={<MainLayout><OrgParticipants /></MainLayout>} />
-          <Route path="/org-dashboard/report" element={<MainLayout><OrgReport /></MainLayout>} />
           <Route path="/org-dashboard/media" element={<MainLayout><OrgMedia /></MainLayout>} />
           <Route path="/org-dashboard/users" element={<MainLayout><OrgUsersManagement /></MainLayout>} />
           <Route path="/org-dashboard/camps" element={<MainLayout><CampsList /></MainLayout>} />
@@ -63,7 +60,6 @@ export default function AppRoutes() {
           <Route path="/org-dashboard/camps/:id" element={<MainLayout><CampDetail /></MainLayout>} />
           <Route path="/org-dashboard/camps/:id/staff" element={<MainLayout><CampStaffAssignment /></MainLayout>} />
           <Route path="/org-dashboard/camps/:id/public-form" element={<MainLayout><GeneratePublicFormLink /></MainLayout>} />
-          <Route path="/org-dashboard/camps/:id/report" element={<MainLayout><CampReport /></MainLayout>} />
         </Route>
 
         {/* Organizer Routes */}
@@ -71,7 +67,6 @@ export default function AppRoutes() {
           <Route path="/camp-dashboard/:id" element={<MainLayout><CampDashboard /></MainLayout>} />
           <Route path="/camp-dashboard/:id/participants" element={<MainLayout><ParticipantList /></MainLayout>} />
           <Route path="/camp-dashboard/:id/participants/:participantId" element={<MainLayout><ParticipantDetail /></MainLayout>} />
-          <Route path="/camp-dashboard/:id/report" element={<MainLayout><CampReport /></MainLayout>} />
           <Route path="/camp-dashboard/:id/media" element={<MainLayout><MediaGallery /></MainLayout>} />
           <Route path="/camp-dashboard/:id/staff" element={<MainLayout><StaffAssignment /></MainLayout>} />
         </Route>

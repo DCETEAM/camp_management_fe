@@ -1,7 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Save, Upload, FileText, User, CheckCircle2, Clock, X, Loader, AlertCircle, Phone } from 'lucide-react'
+import { ArrowLeft, Save, Upload, FileText, User, CheckCircle2, Clock, X, Loader, AlertCircle } from 'lucide-react'
 import api from '../../../core/interceptors/axiosInterceptor'
+import DynamicFormField from '../../../common/components/DynamicFormField'
+import DateInput from '../../../common/components/DateInput'
+import {
+  buildResponseData,
+  isParticipantFieldKey,
+  isPhoneFieldKey,
+  normalizeParticipantKey,
+  validateFormFields,
+} from '../../../common/utils/formFields'
 
 export default function StepForm() {
   const { campId, participantId } = useParams()
@@ -68,18 +77,13 @@ export default function StepForm() {
   }
 
   const isStep1 = (stepTemplate?.step_order ?? 1) === 1
-  const BASIC_KEYS = ['name','age','gender','phone','phone_number','full_name','fullname']
 
   const validate = () => {
-    const errors = {}
-    const fields = (stepTemplate?.form_fields ?? []).filter(f => !BASIC_KEYS.includes(f.key.toLowerCase()))
-    fields.forEach(field => {
-      if (!field.required) return
-      const val = field.type === 'file' ? uploadedFiles[field.key] : formValues[field.key]
-      if (val === undefined || val === null || val === '') {
-        errors[field.key] = `${field.label} is required`
-      }
-    })
+    const errors = validateFormFields(
+      stepTemplate?.form_fields ?? [],
+      formValues,
+      uploadedFiles
+    )
     if (isStep1 && !outcome) errors['_outcome'] = 'Please select an outcome'
     return errors
   }
@@ -97,21 +101,25 @@ export default function StepForm() {
     try {
       setSubmitting(true)
       // Build response_data with participant info + form values
-      const responseData = {
-        name: participant?.name || '',
-        age: participant?.age || '',
-        gender: participant?.gender || '',
-        phone: participant?.phone || '',
-        ...formValues,
+      const responseData = buildResponseData(formValues, stepTemplate?.form_fields ?? [])
+
+      for (const [key, file] of Object.entries(uploadedFiles)) {
+        if (!file) continue
+        const fd = new FormData()
+        fd.append('participant_id', participantId)
+        fd.append('step_template_id', stepTemplateId)
+        fd.append('field_key', key)
+        fd.append('file', file)
+        await api.post('/media', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       }
+
       await api.post('/step-responses', {
         participant_id: parseInt(participantId),
         step_template_id: parseInt(stepTemplateId),
         response_data: responseData,
         outcome: isStep1 ? outcome : 'Completed',
       })
-      
-      // Navigate back to the queue for the same camp
+
       navigate(`/staff-workstation/${campId}/queue`)
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to save response.')
@@ -192,10 +200,9 @@ export default function StepForm() {
 
       case 'date':
         return (
-          <input
-            type="date"
+          <DateInput
             value={formValues[field.key] || ''}
-            onChange={(e) => { handleFieldChange(field.key, e.target.value); clearError(field.key) }}
+            onChange={(iso) => { handleFieldChange(field.key, iso); clearError(field.key) }}
             className={`${baseInput} ${borderClass}`}
           />
         )
@@ -275,7 +282,10 @@ export default function StepForm() {
     }
   }
 
-  const formFields = (stepTemplate?.form_fields ?? []).filter(f => !BASIC_KEYS.includes(f.key.toLowerCase()))
+  const formFields = stepTemplate?.form_fields ?? []
+  const participantInfoFields = (stepTemplate?.form_fields ?? []).filter((field) =>
+    isPhoneFieldKey(field.key) || isParticipantFieldKey(field.key)
+  )
   const outcomeOptions = ['Completed', 'Normal', 'Referred', 'Treated', 'No Action', 'Incomplete']
 
   // Derived counts
@@ -423,61 +433,26 @@ export default function StepForm() {
 
             <div className="p-4 space-y-4">
               {/* Mandatory Participant Info - Read Only — only for step 1 */}
-              {isStep1 && <div className="pb-4 border-b border-gray-100">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Participant Information (Required)</h3>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      <span className="flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5" />
-                        Full Name <span className="text-red-500">*</span>
-                      </span>
-                    </label>
-                    <input
-                      type="text"
-                      value={participant?.name || ''}
-                      disabled
-                      className="w-full px-3 py-3 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      <span className="flex items-center gap-1.5">
-                        <Phone className="w-3.5 h-3.5" />
-                        Phone <span className="text-red-500">*</span>
-                      </span>
-                    </label>
-                    <input
-                      type="text"
-                      value={participant?.phone || ''}
-                      disabled
-                      className="w-full px-3 py-3 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Age <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={participant?.age ? `${participant.age} years` : ''}
-                      disabled
-                      className="w-full px-3 py-3 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-sm font-semibold text-gray-700">
-                      Gender <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={participant?.gender || ''}
-                      disabled
-                      className="w-full px-3 py-3 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
-                    />
-                  </div>
+              {isStep1 && participantInfoFields.length > 0 && (
+              <div className="pb-4 border-b border-gray-100">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Participant Information</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {participantInfoFields.map((field) => {
+                    const participantKey = normalizeParticipantKey(field.key) || (isPhoneFieldKey(field.key) ? 'phone' : field.key)
+                    const value = participant?.[participantKey] ?? ''
+                    return (
+                      <div key={field.key} className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          {field.label}
+                          {field.required && <span className="text-red-500 ml-0.5">*</span>}
+                        </label>
+                        <DynamicFormField field={field} value={value} disabled />
+                      </div>
+                    )
+                  })}
                 </div>
-              </div>}
+              </div>
+              )}
 
               {/* Custom Form Fields */}
               {formFields.length === 0 && (

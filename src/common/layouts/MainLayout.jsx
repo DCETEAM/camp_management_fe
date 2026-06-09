@@ -12,7 +12,6 @@ import {
   Calendar as CalendarIcon,
   User,
   LayoutDashboard,
-  BarChart3,
   Image,
   ClipboardList,
   ArrowLeftRight,
@@ -77,11 +76,6 @@ export default function MainLayout({ children }) {
       icon: Users
     },
     {
-      name: 'Report',
-      href: '/org-dashboard/report',
-      icon: BarChart3
-    },
-    {
       name: 'Media',
       href: '/org-dashboard/media',
       icon: Image,
@@ -122,11 +116,6 @@ export default function MainLayout({ children }) {
       icon: Users
     },
     {
-      name: 'Report',
-      href: `/camp-dashboard/${campId}/report`,
-      icon: BarChart3
-    },
-    {
       name: 'Media Gallery',
       href: `/camp-dashboard/${campId}/media`,
       icon: Image
@@ -162,11 +151,6 @@ export default function MainLayout({ children }) {
         name: 'Participants',
         href: `/camp-dashboard/${staffCampId}/participants`,
         icon: Users
-      },
-      {
-        name: 'Report',
-        href: `/camp-dashboard/${staffCampId}/report`,
-        icon: BarChart3
       },
       {
         name: 'Media Gallery',

@@ -3,21 +3,36 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Users, ArrowRight, Clock, User, Loader, AlertCircle, RefreshCw, ListChecks, UserPlus, CheckCircle2, ArrowLeft, FileText, Upload, X, IndianRupee } from 'lucide-react'
 import api from '../../../core/interceptors/axiosInterceptor'
 import { useAuth } from '../../auth/contexts/auth-context'
-import { validate as validateUtil } from '../../../common/utils/validation'
+import RegistrationFormFields from '../../../common/components/RegistrationFormFields'
+import CampRegistrationNotes from '../../../common/components/CampRegistrationNotes'
+import RegistrationSuccessDisplay from '../../../common/components/RegistrationSuccessDisplay'
+import {
+  buildInitialFieldValues,
+  buildResponseData,
+  validateFormFields,
+} from '../../../common/utils/formFields'
+import { getParticipantName, getParticipantSubtitle } from '../../../common/utils/participantDisplay'
 
 function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack, onSuccess, onRegistered }) {
-  const [form, setForm] = useState({ name: '', age: '', gender: '', phone: '' })
-  const [extraFields, setExtraFields] = useState({})
+  const [fieldValues, setFieldValues] = useState(() => buildInitialFieldValues(stepFormFields))
   const [fileFields, setFileFields] = useState({})
+  const [fieldErrors, setFieldErrors] = useState({})
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [token, setToken] = useState(null)
+  const [registrationDone, setRegistrationDone] = useState(false)
   const [campData, setCampData] = useState(null)
   const [paidChecked, setPaidChecked] = useState(false)
   const [selectedAddOns, setSelectedAddOns] = useState({})
 
-  const handle = (k, v) => setForm(p => ({ ...p, [k]: v }))
-  const inputCls = "w-full px-3 py-3 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+  useEffect(() => {
+    setFieldValues(buildInitialFieldValues(stepFormFields))
+  }, [stepFormFields])
+
+  const handleFieldChange = (key, value) => {
+    setFieldValues((prev) => ({ ...prev, [key]: value }))
+    setFieldErrors((prev) => ({ ...prev, [key]: undefined }))
+  }
 
   useEffect(() => {
     api.get(`/camps/${campId}`).then(r => {
@@ -44,11 +59,10 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
   const submit = async (e) => {
     e.preventDefault()
 
-    // Validate
-    const nameErr = validateUtil.name(form.name)
-    const phoneErr = validateUtil.phone(form.phone)
-    if (nameErr || phoneErr) {
-      setError(nameErr || phoneErr)
+    const errors = validateFormFields(stepFormFields || [], fieldValues, fileFields)
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      setError(Object.values(errors)[0])
       return
     }
 
@@ -58,10 +72,6 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
     try {
       const pRes = await api.post('/participants', {
         camp_id: parseInt(campId),
-        name: form.name,
-        age: parseInt(form.age),
-        gender: form.gender,
-        phone: form.phone,
       })
       const participant = pRes.data
 
@@ -71,14 +81,7 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
       const addOnsTotal = selectedAddOnsList.reduce((s, a) => s + parseFloat(a.price ?? 0), 0)
       const totalAmount = registrationFee + addOnsTotal
 
-      // Build response_data with payment info
-      const responseData = {
-        name: form.name,
-        age: form.age,
-        gender: form.gender,
-        phone: form.phone || '',
-        ...extraFields,
-      }
+      const responseData = buildResponseData(fieldValues, stepFormFields || [], {})
       if (paymentEnabled) {
         responseData.payment_status = paidChecked ? 'paid' : 'unpaid'
         responseData.payment_method = paidChecked ? 'offline' : null
@@ -110,6 +113,7 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
         await api.post('/media', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       }
       setToken(participant.token_number)
+      setRegistrationDone(true)
     } catch (err) {
       setError(err.response?.data?.message || Object.values(err.response?.data?.errors || {}).flat()[0] || 'Registration failed.')
     } finally {
@@ -117,8 +121,7 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
     }
   }
 
-  // Token success screen — same card style
-  if (token) {
+  if (registrationDone) {
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-3">
@@ -136,10 +139,7 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
           </div>
           <h2 className="font-poppins text-lg font-bold text-gray-900 mb-1">Registered!</h2>
           <p className="text-xs text-gray-500 mb-6">Participant registered successfully</p>
-          <div className="bg-primary-50 border-2 border-primary-200 rounded-xl p-5 mb-6 inline-block min-w-[160px]">
-            <p className="text-xs text-gray-500 mb-1">Token Number</p>
-            <p className="text-5xl font-bold text-primary-700 tracking-wider">{token}</p>
-          </div>
+          <RegistrationSuccessDisplay camp={campData} tokenNumber={token} />
           <div className="flex gap-3 mt-2">
             <button onClick={() => { onRegistered?.(); onBack() }}
               className="flex-1 py-3 text-sm font-semibold border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors">
@@ -147,10 +147,11 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
             </button>
             <button onClick={() => { 
                 onRegistered?.(); 
-                setToken(null); 
-                setForm({ name: '', age: '', gender: '', phone: '' }); 
-                setExtraFields({}); 
-                setFileFields({}); 
+                setToken(null);
+                setRegistrationDone(false);
+                setFieldValues(buildInitialFieldValues(stepFormFields));
+                setFileFields({});
+                setFieldErrors({}); 
                 setPaidChecked(false);
                 setSelectedAddOns({});
                 setError(null);
@@ -185,114 +186,27 @@ function RegisterForm({ campId, stepTemplateId, stepFormFields, stepName, onBack
         <div className="p-4 space-y-4">
           {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
 
-          {/* Full Name - Full Width */}
-          <div className="space-y-1.5">
-            <label className="block text-sm font-semibold text-gray-700">
-              Full Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              value={form.name}
-              onChange={e => handle('name', e.target.value)}
-              required
-              className={inputCls}
-              placeholder="Enter full name"
-              autoComplete="off"
+          {campData?.registration_notes?.length > 0 && (
+            <CampRegistrationNotes
+              notes={campData.registration_notes}
+              campContext={{
+                name: campData.name,
+                registration_fee: campData.registration_fee,
+                payment_description: campData.payment_description,
+                participant_count: campData.participants_count ?? campData.participant_count ?? 0,
+              }}
             />
-          </div>
+          )}
 
-          {/* Age & Gender - 2 columns, Phone - full width */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-gray-700">
-                Age <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                value={form.age}
-                onChange={e => handle('age', e.target.value)}
-                required
-                min="0"
-                max="130"
-                className={inputCls}
-                placeholder="Age"
-                inputMode="numeric"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="block text-sm font-semibold text-gray-700">
-                Gender <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={form.gender}
-                onChange={e => handle('gender', e.target.value)}
-                required
-                className={`${inputCls} bg-white`}
-              >
-                <option value="">Select</option>
-                <option>Male</option>
-                <option>Female</option>
-                <option>Other</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="block text-sm font-semibold text-gray-700">
-              Phone <span className="text-red-500">*</span>
-            </label>
-            <input
-              value={form.phone}
-              onChange={e => handle('phone', e.target.value)}
-              required
-              className={inputCls}
-              placeholder="Mobile number"
-              inputMode="tel"
-            />
-          </div>
-
-          {/* Extra fields from step template */}
-          {stepFormFields?.filter(f => !['name','age','gender','phone','phone_number'].includes(f.key)).map(field => (
-            <div key={field.key}>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                {field.label}{field.required && <span className="text-red-500 ml-0.5">*</span>}
-              </label>
-              {field.type === 'textarea' ? (
-                <textarea value={extraFields[field.key] || ''} onChange={e => setExtraFields(p => ({...p, [field.key]: e.target.value}))}
-                  rows={3} required={field.required} className={`${inputCls} resize-none`} />
-              ) : field.type === 'dropdown' ? (
-                <select value={extraFields[field.key] || ''} onChange={e => setExtraFields(p => ({...p, [field.key]: e.target.value}))}
-                  required={field.required} className={`${inputCls} bg-white`}>
-                  <option value="">Select…</option>
-                  {field.options?.map(o => <option key={o}>{o}</option>)}
-                </select>
-              ) : field.type === 'file' ? (
-                fileFields[field.key] ? (
-                  <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-gray-400" />
-                      <span className="text-xs text-gray-700 truncate max-w-[200px]">{fileFields[field.key].name}</span>
-                      <span className="text-[10px] text-gray-400">({(fileFields[field.key].size / 1024).toFixed(1)} KB)</span>
-                    </div>
-                    <button type="button" onClick={() => setFileFields(p => { const n = {...p}; delete n[field.key]; return n })}
-                      className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ) : (
-                  <label className="flex items-center justify-center gap-2 px-3 py-3 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:border-primary-300 hover:bg-primary-50/30 transition-all">
-                    <Upload className="w-4 h-4 text-gray-400" />
-                    <span className="text-xs text-gray-500">Click to upload file</span>
-                    <input type="file" accept="image/*,.pdf" className="hidden"
-                      onChange={e => { if (e.target.files[0]) setFileFields(p => ({...p, [field.key]: e.target.files[0]})) }} />
-                  </label>
-                )
-              ) : (
-                <input type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
-                  value={extraFields[field.key] || ''} onChange={e => setExtraFields(p => ({...p, [field.key]: e.target.value}))}
-                  required={field.required} className={inputCls} />
-              )}
-            </div>
-          ))}
+          <RegistrationFormFields
+            formFields={stepFormFields || []}
+            values={fieldValues}
+            onChange={handleFieldChange}
+            files={fileFields}
+            onFileChange={(key, file) => setFileFields((prev) => ({ ...prev, [key]: file }))}
+            onRemoveFile={(key) => setFileFields((prev) => { const next = { ...prev }; delete next[key]; return next })}
+            errors={fieldErrors}
+          />
 
           {/* Payment section - Professional design */}
           {paymentEnabled && (
@@ -830,6 +744,9 @@ export default function MyQueue() {
               <div className="divide-y divide-gray-50">
                 {registeredList.map((resp, index) => {
                   const p = resp.participant ?? resp
+                  const profileData = p.profile_data || resp.response_data
+                  const displayName = getParticipantName(p, profileData)
+                  const subtitle = getParticipantSubtitle(p, profileData)
                   return (
                     <button key={resp.id} onClick={() => setViewParticipant(p)}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left">
@@ -840,8 +757,8 @@ export default function MyQueue() {
                         <span className="text-xs font-bold text-primary-700">{p.token_number}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-900">{p.name}</p>
-                        <p className="text-[11px] text-gray-500">{p.age}y &middot; {p.gender}{p.phone ? ` · ${p.phone}` : ''}</p>
+                        <p className="text-xs font-semibold text-gray-900 truncate">{displayName}</p>
+                        {subtitle && <p className="text-[11px] text-gray-500 truncate">{subtitle}</p>}
                       </div>
                       <div className="flex-shrink-0">
                         {resp.completed_at && (
@@ -919,9 +836,9 @@ export default function MyQueue() {
                       <span className="text-xs font-bold text-primary-700">{participant.token_number}</span>
                     </button>
                     <button onClick={() => setViewParticipant(participant)} className="flex-1 min-w-0 text-left">
-                      <p className="text-xs font-semibold text-gray-900">{participant.name}</p>
-                      <p className="text-[11px] text-gray-500 flex items-center gap-1">
-                        {participant.age}y &middot; {participant.gender}
+                      <p className="text-xs font-semibold text-gray-900 truncate">{getParticipantName(participant)}</p>
+                      <p className="text-[11px] text-gray-500 flex items-center gap-1 truncate">
+                        {getParticipantSubtitle(participant) || '—'}
                         <span className="inline-flex items-center gap-0.5 ml-1 text-primary-400">
                           <FileText className="w-2.5 h-2.5" />
                           <span className="text-[10px]">View history</span>

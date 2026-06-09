@@ -2,7 +2,17 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { FileText, User, CheckCircle2, Loader, AlertCircle, Upload, X, Calendar, MapPin, ShoppingCart, IndianRupee, Phone } from 'lucide-react'
 import publicFormService from '../services/public-form-service'
-import { validate as validateUtil } from '../../../common/utils/validation'
+import RegistrationFormFields from '../../../common/components/RegistrationFormFields'
+import DateInput from '../../../common/components/DateInput'
+import CampRegistrationNotes from '../../../common/components/CampRegistrationNotes'
+import RegistrationSuccessDisplay from '../../../common/components/RegistrationSuccessDisplay'
+import { campShowsToken } from '../../../common/utils/registrationSuccessUtils'
+import {
+  buildInitialFieldValues,
+  buildResponseData,
+  extractParticipantPayload,
+  validateFormFields,
+} from '../../../common/utils/formFields'
 
 export default function PublicStepForm() {
   const [searchParams] = useSearchParams()
@@ -13,13 +23,7 @@ export default function PublicStepForm() {
   const [stepTemplate, setStepTemplate] = useState(null)
   const [camp, setCamp] = useState(null)
 
-  const [formData, setFormData] = useState({
-    name: '',
-    age: '',
-    gender: 'Male',
-    phone: '',
-  })
-  const [responseData, setResponseData] = useState({})
+  const [fieldValues, setFieldValues] = useState({})
   const [fileFields, setFileFields] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [fieldErrors, setFieldErrors] = useState({})
@@ -40,6 +44,7 @@ export default function PublicStepForm() {
         setLoading(true)
         const data = await publicFormService.getStepTemplate()
         setStepTemplate(data.step_template)
+        setFieldValues(buildInitialFieldValues(data.step_template?.form_fields || []))
         setCamp(data.camp)
         // Auto-select all required add-ons
         const required = (data.camp?.add_ons ?? []).filter(a => !a.optional)
@@ -60,10 +65,9 @@ export default function PublicStepForm() {
   }, [urlToken])
 
   const handleFieldChange = (key, value) => {
-    setResponseData(prev => ({ ...prev, [key]: value }))
-    // Clear error for this field
+    setFieldValues((prev) => ({ ...prev, [key]: value }))
     if (fieldErrors[key]) {
-      setFieldErrors(prev => ({ ...prev, [key]: undefined }))
+      setFieldErrors((prev) => ({ ...prev, [key]: undefined }))
     }
   }
 
@@ -84,34 +88,7 @@ export default function PublicStepForm() {
     })
   }
 
-  const validate = () => {
-    const errors = {}
-    const fields = stepTemplate?.form_fields ?? []
-    const basicFieldKeys = ['name', 'age', 'gender', 'phone', 'phone_number', 'full_name', 'fullname']
-
-    // Validate basic fields from formData
-    const nameErr = validateUtil.name(formData.name)
-    if (nameErr) errors.name = nameErr
-    
-    if (!formData.age) errors.age = 'Age is required'
-    if (!formData.gender) errors.gender = 'Gender is required'
-    
-    const phoneErr = validateUtil.phone(formData.phone) || (!formData.phone?.trim() ? 'Phone number is required' : null)
-    if (phoneErr) errors.phone = phoneErr
-
-    // Validate custom form fields (skip basic fields that are already validated above)
-    fields.forEach(field => {
-      if (!field.required) return
-      // Skip basic info fields - they are validated from formData above
-      if (basicFieldKeys.includes(field.key.toLowerCase())) return
-      const value = field.type === 'file' ? fileFields[field.key] : responseData[field.key]
-      if (value === undefined || value === null || value === '') {
-        errors[field.key] = `${field.label} is required`
-      }
-    })
-
-    return errors
-  }
+  const validate = () => validateFormFields(stepTemplate?.form_fields || [], fieldValues, fileFields)
 
   // Toggle add-on selection
   const toggleAddOn = (addon) => {
@@ -145,14 +122,8 @@ export default function PublicStepForm() {
     setSubmitting(true)
     setError(null)
     try {
-      // Build response_data with basic info + custom fields + payment info
-      const finalResponseData = {
-        name: formData.name,
-        age: formData.age,
-        gender: formData.gender,
-        phone: formData.phone,
-        ...responseData,
-      }
+      const participantPayload = extractParticipantPayload(fieldValues, stepTemplate?.form_fields || [])
+      let finalResponseData = buildResponseData(fieldValues, stepTemplate?.form_fields || [], {})
       if (camp?.payment_enabled) {
         finalResponseData.payment_status = paymentId ? 'paid' : 'pending'
         finalResponseData.payment_method = paymentId ? 'online' : null
@@ -163,10 +134,6 @@ export default function PublicStepForm() {
       }
 
       const submitData = {
-        name: formData.name,
-        age: parseInt(formData.age),
-        gender: formData.gender,
-        phone: formData.phone,
         response_data: finalResponseData,
         ...(paymentId ? { payment_id: paymentId } : {}),
         ...(camp?.payment_enabled && paymentId ? { payment_method: 'online' } : {}),
@@ -175,11 +142,15 @@ export default function PublicStepForm() {
       const fileEntries = Object.entries(fileFields)
       if (fileEntries.length > 0) {
         const formDataObj = new FormData()
-        formDataObj.append('name', submitData.name)
-        formDataObj.append('age', submitData.age)
-        formDataObj.append('gender', submitData.gender)
-        formDataObj.append('phone', submitData.phone)
-        formDataObj.append('response_data', JSON.stringify(submitData.response_data))
+        Object.entries(submitData).forEach(([key, value]) => {
+          if (key === 'response_data') {
+            formDataObj.append(key, JSON.stringify(value))
+            return
+          }
+          if (value !== undefined && value !== null && value !== '') {
+            formDataObj.append(key, value)
+          }
+        })
         if (paymentId) formDataObj.append('payment_id', paymentId)
         if (camp?.payment_enabled && paymentId) formDataObj.append('payment_method', 'online')
         fileEntries.forEach(([key, file]) => formDataObj.append(`response_data.${key}`, file))
@@ -236,12 +207,7 @@ export default function PublicStepForm() {
     try {
       const orderRes = await publicFormService.createPaymentOrder({
         camp_id: camp.id,
-        participant_data: {
-          name: formData.name,
-          age: parseInt(formData.age),
-          gender: formData.gender,
-          phone: formData.phone,
-        },
+        participant_data: extractParticipantPayload(fieldValues, stepTemplate?.form_fields || []),
         selected_add_ons: [
           // Always include required add-ons
           ...(camp?.add_ons ?? []).filter(a => !a.optional).map(a => ({ name: a.name, price: parseFloat(a.price) })),
@@ -350,10 +316,9 @@ export default function PublicStepForm() {
 
       case 'date':
         return (
-          <input
-            type="date"
+          <DateInput
             value={responseData[field.key] || ''}
-            onChange={(e) => handleFieldChange(field.key, e.target.value)}
+            onChange={(iso) => handleFieldChange(field.key, iso)}
             className={`${baseInput} ${borderClass}`}
           />
         )
@@ -468,12 +433,11 @@ export default function PublicStepForm() {
             <CheckCircle2 className="w-10 h-10 text-green-600" />
           </div>
           <h2 className="font-poppins text-2xl font-bold text-gray-900 mb-2">Form Submitted!</h2>
-          <p className="text-gray-600 mb-6">Please save your token number for reference</p>
+          <p className="text-gray-600 mb-6">
+            {campShowsToken(camp) ? 'Please save your token number for reference' : 'Your registration is complete'}
+          </p>
 
-          <div className="bg-primary-50 border-2 border-primary-200 rounded-xl p-6 mb-6">
-            <p className="text-sm text-gray-500 mb-1">Your Token Number</p>
-            <p className="text-5xl font-bold text-primary-700 tracking-wider">{tokenNumber}</p>
-          </div>
+          <RegistrationSuccessDisplay camp={camp} tokenNumber={tokenNumber} tokenLabel="Your Token Number" variant="large" />
 
           <div className="text-sm text-gray-500 mb-4">
             <p className="font-semibold">{camp?.name}</p>
@@ -656,83 +620,39 @@ export default function PublicStepForm() {
             </div>
           )}
 
-          {/* Basic Info - Card Style */}
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="bg-gradient-to-r from-gray-700 to-gray-800 px-4 py-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <User className="w-4 h-4" /> Basic Information
+                <User className="w-4 h-4" /> Registration Details
               </h3>
             </div>
-            <div className="p-4 space-y-4">
-              {/* Full Name - Full Width */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  <span className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-primary-500" />
-                    Full Name <span className="text-red-500">*</span>
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className={`w-full px-4 py-3 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all ${fieldErrors.name ? 'border-red-400' : 'border-gray-200'}`}
-                  placeholder="Enter your full name"
+            <div className="p-4">
+              {camp?.registration_notes?.length > 0 && (
+                <CampRegistrationNotes
+                  notes={camp.registration_notes}
+                  campContext={{
+                    name: camp.name,
+                    registration_fee: camp.registration_fee,
+                    payment_description: camp.payment_description,
+                    participant_count: camp.participant_count ?? 0,
+                  }}
                 />
-                {fieldErrors.name && <p className="mt-1 text-xs text-red-500">{fieldErrors.name}</p>}
-              </div>
+              )}
 
-              {/* Age | Gender - 2 col */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Age <span className="text-red-500">*</span></label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    max="130"
-                    value={formData.age}
-                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                    className={`w-full px-4 py-3 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all ${fieldErrors.age ? 'border-red-400' : 'border-gray-200'}`}
-                    placeholder="Age"
-                  />
-                  {fieldErrors.age && <p className="mt-1 text-xs text-red-500">{fieldErrors.age}</p>}
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Gender <span className="text-red-500">*</span></label>
-                  <select
-                    required
-                    value={formData.gender}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                    className={`w-full px-4 py-3 text-sm border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all bg-white ${fieldErrors.gender ? 'border-red-400' : 'border-gray-200'}`}
-                  >
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  {fieldErrors.gender && <p className="mt-1 text-xs text-red-500">{fieldErrors.gender}</p>}
-                </div>
-              </div>
-
-              {/* Phone */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  <span className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-primary-500" />
-                    Phone Number <span className="text-red-500">*</span>
-                  </span>
-                </label>
-                <input
-                type="tel"
-                required
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-3.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
-                placeholder="Mobile number"
+              <RegistrationFormFields
+                formFields={stepTemplate?.form_fields || []}
+                values={fieldValues}
+                onChange={handleFieldChange}
+                files={fileFields}
+                onFileChange={(key, file) => {
+                  setFileFields((prev) => ({ ...prev, [key]: file }))
+                  setFieldErrors((prev) => ({ ...prev, [key]: undefined }))
+                }}
+                onRemoveFile={(key) => setFileFields((prev) => { const next = { ...prev }; delete next[key]; return next })}
+                errors={fieldErrors}
+                labelClassName="block text-sm font-medium text-gray-700"
               />
             </div>
-          </div>
           </div>
 
           {/* Payment Section - Inline like staff form */}
@@ -809,33 +729,6 @@ export default function PublicStepForm() {
                     </span>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Custom Form Fields - Filter out basic info fields that are already collected above */}
-          {formFields.filter(f => !['name','age','gender','phone','phone_number','full_name','fullname'].includes(f.key.toLowerCase())).length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-3">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <FileText className="w-4 h-4" /> Additional Information
-                </h3>
-              </div>
-              <div className="p-4 space-y-4">
-                {formFields
-                  .filter(f => !['name','age','gender','phone','phone_number','full_name','fullname'].includes(f.key.toLowerCase()))
-                  .map((field) => (
-                  <div key={field.key} data-field-error={fieldErrors[field.key] ? true : undefined}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {field.label}
-                      {field.required && <span className="text-red-500 ml-0.5">*</span>}
-                    </label>
-                    {renderField(field)}
-                    {fieldErrors[field.key] && (
-                      <p className="mt-1 text-xs text-red-500">{fieldErrors[field.key]}</p>
-                    )}
-                  </div>
-                ))}
               </div>
             </div>
           )}

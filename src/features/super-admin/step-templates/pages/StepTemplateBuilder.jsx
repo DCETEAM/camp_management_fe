@@ -1,26 +1,56 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   ChevronsUpDown, Plus, Edit, Trash2, GripVertical, ListChecks,
-  X, Save, User, ChevronDown, ChevronUp, Loader, AlertCircle, Lock, Users
+  X, Save, ChevronDown, ChevronUp, Loader, AlertCircle, Lock, Users
 } from 'lucide-react'
 import { useStepTemplates } from '../hooks/useStepTemplates'
 import stepTemplateService from '../services/step-template-service'
 import eventTypeService from '../../event-types/services/event-type-service'
 import ConfirmDialog from '../../event-types/components/ConfirmDialog'
-
+import {
+  defaultValidationForType,
+  FIELD_VALIDATION_LABELS,
+  getValidationsForFieldType,
+} from '../../../../common/utils/fieldValidations'
 const FIELD_TYPE_LABELS = {
   text: 'Text', number: 'Number', dropdown: 'Dropdown',
   date: 'Date', boolean: 'Yes/No', textarea: 'Textarea', file: 'File Upload',
 }
 
-const ROLE_OPTIONS = [
-  { value: 'staff', label: 'Staff' },
-  { value: 'organizer', label: 'Organizer' },
-  { value: 'org_admin', label: 'Org Admin' },
-]
+const EMPTY_FORM = { stepName: '', formFields: [] }
+const EMPTY_FIELD = { key: '', label: '', type: 'text', options: '', required: false, validation: 'none' }
 
-const EMPTY_FORM = { stepName: '', roleRequired: 'staff', formFields: [] }
-const EMPTY_FIELD = { key: '', label: '', type: 'text', options: '', required: false }
+function buildFieldFromDraft(draft, existingFields, editIdx) {
+  const key = draft.key?.trim()
+  const label = draft.label?.trim()
+  if (!key && !label) return { field: null, error: null }
+  if (!key) return { field: null, error: 'Key is required for the field you are adding.' }
+  if (!label) return { field: null, error: 'Label is required for the field you are adding.' }
+  const isDuplicate = existingFields.some((f, i) => f.key === key && i !== editIdx)
+  if (isDuplicate) return { field: null, error: 'A field with this key already exists.' }
+
+  const field = {
+    key,
+    label,
+    type: draft.type,
+    required: draft.required,
+    validation: draft.validation || defaultValidationForType(draft.type),
+  }
+  if (draft.type === 'dropdown' && draft.options?.trim()) {
+    field.options = draft.options.split(',').map(o => o.trim()).filter(Boolean)
+  }
+  return { field, error: null }
+}
+
+function mergePendingField(formFields, draft, editIdx) {
+  const { field, error } = buildFieldFromDraft(draft, formFields, editIdx)
+  if (error) return { formFields: null, error }
+  if (!field) return { formFields, error: null }
+  if (editIdx !== null) {
+    return { formFields: formFields.map((f, i) => (i === editIdx ? field : f)), error: null }
+  }
+  return { formFields: [...formFields, field], error: null }
+}
 
 export default function StepTemplateBuilder() {
   const [eventTypes, setEventTypes] = useState([])
@@ -85,13 +115,13 @@ export default function StepTemplateBuilder() {
       try {
         const fresh = await stepTemplateService.getStepTemplate(step.id)
         setEditingStep(fresh)
-        const fd = { stepName: fresh.step_name, roleRequired: fresh.role_required, formFields: parseFormFields(fresh.form_fields) }
+        const fd = { stepName: fresh.step_name, formFields: parseFormFields(fresh.form_fields) }
         formDataRef.current = fd
         setFormData(fd)
       } catch {
         setEditingStep(step)
         const fd = step
-          ? { stepName: step.step_name, roleRequired: step.role_required, formFields: parseFormFields(step.form_fields) }
+          ? { stepName: step.step_name, formFields: parseFormFields(step.form_fields) }
           : EMPTY_FORM
         formDataRef.current = fd
         setFormData(fd)
@@ -118,22 +148,14 @@ export default function StepTemplateBuilder() {
 
   const handleAddField = () => {
     setSaveError(null)
-    const key = newField.key.trim().toLowerCase()
-    if (!key) { setFieldError('Key is required.'); return }
-    if (['name', 'age', 'gender', 'phone', 'phone_number', 'full_name', 'fullname'].includes(key)) {
-      setFieldError('This key is reserved for system use.'); return
-    }
-    if (!newField.label.trim()) { setFieldError('Label is required.'); return }
     const currentFields = formDataRef.current.formFields
     const currentEditIdx = editingFieldIdxRef.current
-    const isDuplicateKey = currentFields.some((f, i) => f.key === newField.key.trim() && i !== currentEditIdx)
-    if (isDuplicateKey) { setFieldError('A field with this key already exists.'); return }
-    const field = { key: newField.key.trim(), label: newField.label.trim(), type: newField.type, required: newField.required }
-    if (newField.type === 'dropdown' && newField.options.trim()) {
-      field.options = newField.options.split(',').map(o => o.trim()).filter(Boolean)
-    }
+    const { field, error } = buildFieldFromDraft(newField, currentFields, currentEditIdx)
+    if (error) { setFieldError(error); return }
+    if (!field) { setFieldError('Key is required.'); return }
+
     if (currentEditIdx !== null) {
-      const updatedFields = currentFields.map((f, i) => i === currentEditIdx ? field : f)
+      const updatedFields = currentFields.map((f, i) => (i === currentEditIdx ? field : f))
       const updated = { ...formDataRef.current, formFields: updatedFields }
       formDataRef.current = updated
       setFormData(updated)
@@ -169,28 +191,36 @@ export default function StepTemplateBuilder() {
       label: f.label,
       type: f.type,
       required: f.required ?? false,
+      validation: f.validation || defaultValidationForType(f.type),
       options: Array.isArray(f.options) ? f.options.join(', ') : (f.options || ''),
     })
     setFieldError('')
   }
 
   const stepHasResponses = (editingStep?.step_responses_count || 0) > 0
-  const MODAL_BASIC_KEYS = ['name','age','gender','phone','phone_number','full_name','fullname']
-  const isStep1Modal = editingStep ? editingStep.step_order === 1 : steps.length === 0
-  const modalVisibleFields = isStep1Modal
-    ? formData.formFields
-    : formData.formFields.filter(f => !MODAL_BASIC_KEYS.includes(f.key.toLowerCase()))
+  const modalVisibleFields = formData.formFields
 
   const handleSaveStep = async (e) => {
     e.preventDefault()
     if (!selectedEventType) return
     setSaveError(null)
+    setFieldError('')
     const current = formDataRef.current
     const isAddingStep1 = !editingStep && steps.length === 0
     const isEditingStep1 = editingStep && editingStep.step_order === 1
-    const BASIC_KEYS = ['name', 'age', 'gender', 'phone', 'phone_number', 'full_name', 'fullname']
-    const customFields = current.formFields.filter(f => !BASIC_KEYS.includes(f.key.toLowerCase()))
-    if (!isAddingStep1 && !isEditingStep1 && customFields.length === 0) {
+
+    let fieldsToSave = current.formFields
+    if (!stepHasResponses) {
+      const merged = mergePendingField(current.formFields, newField, editingFieldIdxRef.current)
+      if (merged.error) {
+        setFieldError(merged.error)
+        setSaveError(merged.error)
+        return
+      }
+      fieldsToSave = merged.formFields
+    }
+
+    if (!isAddingStep1 && !isEditingStep1 && fieldsToSave.length === 0) {
       setSaveError('Please add at least one field before saving.')
       return
     }
@@ -200,10 +230,9 @@ export default function StepTemplateBuilder() {
         const payload = {
           step_name: current.stepName.trim(),
           step_order: editingStep.step_order,
-          role_required: current.roleRequired,
         }
         if (!stepHasResponses) {
-          payload.form_fields = current.formFields
+          payload.form_fields = fieldsToSave
         }
         await stepTemplateService.updateStepTemplate(editingStep.id, payload)
       } else {
@@ -211,8 +240,7 @@ export default function StepTemplateBuilder() {
           event_type_id: selectedEventType,
           step_name: current.stepName.trim(),
           step_order: steps.length + 1,
-          role_required: current.roleRequired,
-          form_fields: current.formFields,
+          form_fields: fieldsToSave,
         })
       }
       await fetchSteps(selectedEventType)
@@ -342,7 +370,6 @@ export default function StepTemplateBuilder() {
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5 text-[11px] text-gray-500 flex-wrap">
-                        <span className="flex items-center gap-1"><User className="w-3 h-3" />{step.role_required}</span>
                         <span className="flex items-center gap-1"><ListChecks className="w-3 h-3" />{step.form_fields?.length || 0} field{step.form_fields?.length !== 1 ? 's' : ''}</span>
                       </div>
                     </div>
@@ -375,6 +402,11 @@ export default function StepTemplateBuilder() {
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-medium">{FIELD_TYPE_LABELS[field.type] || field.type}</span>
                                 {field.required && <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded text-[10px] font-medium">Required</span>}
+                                {field.validation && field.validation !== 'none' && (
+                                  <span className="px-2 py-0.5 bg-violet-100 text-violet-700 rounded text-[10px] font-medium">
+                                    {FIELD_VALIDATION_LABELS[field.validation] || field.validation}
+                                  </span>
+                                )}
                                 {field.options?.length > 0 && <span className="px-2 py-0.5 bg-gray-200 text-gray-600 rounded text-[10px]">{field.options.length} opts</span>}
                               </div>
                             </div>
@@ -417,12 +449,6 @@ export default function StepTemplateBuilder() {
                   <input type="text" required value={formData.stepName} onChange={(e) => { const v = e.target.value; setFormData(p => { const u = { ...p, stepName: v }; formDataRef.current = u; return u }) }} className="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none" placeholder="e.g. Registration, Doctor Checkup, Pharmacy" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Role Required <span className="text-red-500">*</span></label>
-                  <select value={formData.roleRequired} onChange={(e) => { const v = e.target.value; setFormData(p => { const u = { ...p, roleRequired: v }; formDataRef.current = u; return u }) }} className="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white">
-                    {ROLE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                  </select>
-                </div>
-                <div>
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                     <label className="text-xs font-semibold text-gray-700">Form Fields</label>
                     {editingStep && stepHasResponses && (
@@ -431,30 +457,6 @@ export default function StepTemplateBuilder() {
                       </span>
                     )}
                   </div>
-
-                  {/* Mandatory Participant Info Notice — only for step 1 */}
-                  {(editingStep ? editingStep.step_order === 1 : steps.length === 0) && <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-[10px] font-semibold text-blue-800 mb-1.5">Participant Information (Always Required)</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="flex items-center gap-1.5 text-[11px] text-blue-700">
-                        <User className="w-3 h-3" />
-                        <span>Full Name *</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[11px] text-blue-700">
-                        <span className="w-3 h-3 flex items-center justify-center text-[8px] font-bold">#</span>
-                        <span>Age *</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[11px] text-blue-700">
-                        <span className="w-3 h-3 flex items-center justify-center text-[8px]">⚤</span>
-                        <span>Gender *</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[11px] text-blue-700">
-                        <span className="w-3 h-3 flex items-center justify-center text-[8px]">📞</span>
-                        <span>Phone *</span>
-                      </div>
-                    </div>
-                    <p className="text-[10px] text-blue-500 mt-1.5 italic">These fields are automatically included and cannot be edited.</p>
-                  </div>}
 
                   {modalVisibleFields.length > 0 && (
                     <div className="space-y-1.5 mb-3">
@@ -468,6 +470,11 @@ export default function StepTemplateBuilder() {
                               <span className="text-[10px] font-mono text-gray-400">{field.key}</span>
                               <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px]">{FIELD_TYPE_LABELS[field.type] || field.type}</span>
                               {field.required && <span className="px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-[10px]">Required</span>}
+                              {field.validation && field.validation !== 'none' && (
+                                <span className="px-1.5 py-0.5 bg-violet-100 text-violet-700 rounded text-[10px]">
+                                  {FIELD_VALIDATION_LABELS[field.validation] || field.validation}
+                                </span>
+                              )}
                               {field.options?.length > 0 && <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded text-[10px] truncate max-w-[120px]">{field.options.join(', ')}</span>}
                             </div>
                           </div>
@@ -513,11 +520,39 @@ export default function StepTemplateBuilder() {
                       </div>
                       <div>
                         <label className="block text-[10px] font-semibold text-gray-600 mb-1">Type</label>
-                        <select value={newField.type} onChange={(e) => setNewField(p => ({ ...p, type: e.target.value, options: '' }))} className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white">
+                        <select
+                          value={newField.type}
+                          onChange={(e) => {
+                            const type = e.target.value
+                            const options = getValidationsForFieldType(type)
+                            setNewField(p => ({
+                              ...p,
+                              type,
+                              options: '',
+                              validation: options.some(o => o.value === p.validation)
+                                ? p.validation
+                                : defaultValidationForType(type),
+                            }))
+                          }}
+                          className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white"
+                        >
                           {Object.entries(FIELD_TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                         </select>
                       </div>
-                      <div className="flex items-end pb-0.5">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-gray-600 mb-1">Validation</label>
+                        <select
+                          value={newField.validation || defaultValidationForType(newField.type)}
+                          onChange={(e) => setNewField(p => ({ ...p, validation: e.target.value }))}
+                          disabled={newField.type === 'date' || ['dropdown', 'boolean', 'file', 'image'].includes(newField.type)}
+                          className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white disabled:bg-gray-50 disabled:text-gray-500"
+                        >
+                          {getValidationsForFieldType(newField.type).map(o => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex items-end pb-0.5 sm:col-span-2">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input type="checkbox" checked={newField.required} onChange={(e) => setNewField(p => ({ ...p, required: e.target.checked }))} className="w-3.5 h-3.5 text-primary-600 rounded focus:ring-primary-500" />
                           <span className="text-xs text-gray-700">Required</span>

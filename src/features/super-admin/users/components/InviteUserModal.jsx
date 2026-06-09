@@ -32,7 +32,7 @@ const EMPTY = { name: '', email: '', role: 'staff', phone: '', org_id: '', passw
 const validateForm = (d, fixedOrgId) => ({
   name: validate.name(d.name),
   email: validate.email(d.email),
-  phone: validate.phone(d.phone) || validate.required(d.phone, 'Phone number'),
+  phone: validate.phoneRequired(d.phone) || validate.required(d.phone, 'Phone number'),
   org_id: !fixedOrgId && d.role !== 'super_admin' && !d.org_id ? 'Organization is required.' : null,
   password: !d.password ? 'Password is required.' : d.password.length < 8 ? 'Minimum 8 characters.' : null,
   password_confirmation: d.password_confirmation !== d.password ? 'Passwords do not match.' : null,
